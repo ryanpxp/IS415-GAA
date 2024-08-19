@@ -1,5 +1,12 @@
 ---
 title: "Hands-on_Ex01"
+author: "Ryan Peh"
+date: "August 17, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
 ---
 
 ## **1. Learning Objectives**
