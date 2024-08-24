@@ -1,7 +1,7 @@
 ---
 title: "In-class Exercise 1: Geospatial Data Science"
 author: "Ryan Peh"
-date: "August 18, 2024"
+date: "August 23, 2024"
 date-modified: "last-modified"
 execute: 
   eval: true

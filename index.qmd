@@ -1,5 +1,12 @@
 ---
 title: "IS415-GAA"
+author: "Ryan Peh"
+date: "August 17, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
 ---
 
 This is a Quarto website.
