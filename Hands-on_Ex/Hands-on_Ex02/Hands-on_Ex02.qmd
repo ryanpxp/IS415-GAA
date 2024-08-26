@@ -304,8 +304,6 @@ tm_shape(mpsz_pop2020) +
   tmap_style("classic")
 ```
 
-Other available styles includes: "white", "gray", "natural", "cobalt", "col_blind", "albatross", "beaver", "bw", "watercolor".
-
 ### 5.3 Cartographic Furniture
 
 `tmap` can also draw map furniture such as compass scale bar and grid.

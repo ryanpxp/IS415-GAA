@@ -1,0 +1,126 @@
+---
+title: "In-class Exercise 2"
+author: "Ryan Peh"
+date: "August 26, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
+---
+
+Required packages are installed using the code chunk below.
+
+```{r}
+pacman::p_load(sf, tidyverse)
+```
+
+
+This import shapefile of mpsz 2014
+
+```{r}
+mpsz2014 = st_read(dsn = "data", 
+                  layer = "MP14_SUBZONE_WEB_PL")
+```
+
+Check if class is data.frame
+
+```{r}
+class(mpsz2014)
+```
+
+Importing kml file of mpsz2014
+
+```{r}
+st_write(mpsz2014, "data/MasterPlan2014SubzoneBoundaryWebKML.kml", delete_dsn = TRUE)
+```
+
+```{r}
+mpsz2014_kml = st_read(dsn = "data/MasterPlan2014SubzoneBoundaryWebKML.kml")
+```
+
+This import shapefile of mpsz 2019
+
+```{r}
+mpsz2019 = st_read(dsn = "data", 
+                  layer = "MPSZ-2019")
+```
+
+Check if class is data.frame
+
+```{r}
+class(mpsz2019)
+```
+Importing kml file of mpsz2019
+
+```{r}
+mpsz2019_kml = st_read(dsn = "data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
+```
+Handling Coordinate System
+
+check coordinate system
+
+```{r}
+st_crs(mpsz2019)
+```
+
+Transform coordinate system
+
+```{r}
+mpsz2014 <- st_read(dsn = "data", 
+                  layer = "MP14_SUBZONE_WEB_PL") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+mpsz2019 <- st_read(dsn = "data", 
+                  layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+```
+
+working with pop data
+
+
+```{r}
+popdata <- read.csv("data/respopagesextod2023.csv")
+```
+
+data wrangling
+
+```{r}
+popdata2023 <- popdata %>% 
+  group_by(PA, SZ, AG) %>% 
+  summarise(`POP`=sum(`Pop`)) %>% 
+  ungroup() %>%
+  pivot_wider(names_from = AG, 
+              values_from = POP)
+
+colnames(popdata2023)
+```
+data processing
+
+```{r}
+popdata2023 <- popdata2023 %>%
+  mutate(`YOUNG` = rowSums(.[3:6]) + rowSums(.[14])) %>%
+  mutate(`ECONOMY ACTIVE` = rowSums(.[7:13])+rowSums(.[15])) %>%
+  mutate(`AGED` = rowSums(.[16:21])) %>%
+  mutate(`TOTAL` = rowSums(.[3:21])) %>%
+  mutate(`DEPENDENCY` = (`YOUNG` + `AGED`)/`ECONOMY ACTIVE`) %>%
+  select(`PA`, `SZ`, `YOUNG`, `ECONOMY ACTIVE`, `AGED`, `TOTAL`, `DEPENDENCY`)
+
+```
+
+```{r}
+popdata2023 <- popdata2023 %>%
+  mutate_at(.vars = vars(PA, SZ), 
+            .funs = list(toupper)) 
+
+```
+
+```{r}
+mpsz_pop2023 <- left_join(mpsz2019, popdata2023, 
+                          by = c("SUBZONE_N" = "SZ"))
+
+mpsz_pop2023
+
+```
