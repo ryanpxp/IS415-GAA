@@ -1,0 +1,761 @@
+---
+title: "Hands-on_Ex03: 1st & 2nd Order Spatial Point Patterns Analysis Methods"
+author: "Ryan Peh"
+date: "August 30, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
+---
+
+## **1 Overview**
+
+Exploring spatial point patterns and methods to identify and analyse these patterns.
+
+**First-order** - include kernel density estimation and bandwidth selection methods **Second-order** - F, G, K and L functions.
+
+This hands-on exercise aims to discover the spatial point processes of childcare centres in Singapore.
+
+The specific questions we would like to answer are as follows:
+
+-   are the childcare centres in Singapore randomly distributed throughout the country?
+
+-   if the answer is not, then the next logical question is where are the locations with higher concentration of childcare centres?
+
+## **2 Setup**
+
+### **2.1 Package**
+
+-   **sf**: Simple features access for R. Includes importing, managing and processing data.
+
+-   **spatstat**: For point to point analysis, 1st and 2nd order spatial point patterns analysis and KDE.
+
+-   **raster**: Handles gridding spatial data
+
+-   **maptools**: Convert spatial objects into spatstat’s ppp format
+
+-   **tmap**: Thematic map library
+
+### **2.2 Data**
+
+Three data sets will be used:
+
+-   `CHILDCARE`, a point feature data providing both location and attribute information of childcare centres. It was downloaded from Data.gov.sg and is in geojson format.
+
+-   `MP14_SUBZONE_WEB_PL`, a polygon feature data providing information of URA 2014 Master Plan Planning Subzone boundary data. It is in ESRI shapefile format. This data set was also downloaded from Data.gov.sg.
+
+-   `CostalOutline`, a polygon feature data showing the national boundary of Singapore. It is provided by SLA and is in ESRI shapefile format.
+
+Code chunk below will be used to install and launch the five R packages.
+
+```{r echo = FALSE}
+install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
+```
+
+```{r}
+pacman::p_load(tmap, sf, tidyverse, raster, spatstat, maptools, sp)
+```
+
+## **3 Spatial Data Wrangling**
+
+### **3.1 Importing the spatial data**
+
+Using st_read(), the following geospatial data are imported into R:
+
+```{r}
+childcare_sf <- st_read("data/child-care-services-geojson.geojson") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+```
+
+```{r}
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL")
+```
+
+```{r}
+st_crs(sg_sf)
+```
+
+Since except childcare_sf, both mpsz_sf and sg_sf do not have proper crs information. we have to transform them:
+
+```{r}
+mpsz_sf <- st_transform(mpsz_sf, crs = 3414)
+sg_sf <- st_transform(sg_sf, crs = 3414)
+
+st_crs(sg_sf)
+```
+
+```{r}
+st_crs(mpsz_sf)
+```
+
+```{r}
+tm_shape(sg_sf) + tm_polygons() + tm_shape(mpsz_sf) + tm_polygons() + tm_shape(childcare_sf) + tm_dots()
+```
+
+Alternatively, we can also prepare a pin map by using the code chunk below.
+
+```{r}
+tmap_mode('view')
+tm_shape(childcare_sf)+
+  tm_dots()
+```
+
+```{r}
+tmap_mode('plot')
+```
+
+### 3.2 Geospatial Data wrangling
+
+Although simple feature data frame is gaining popularity again sp’s Spatial\* classes, there are, however, many geospatial analysis packages require the input geospatial data in sp’s Spatial\* classes.
+
+#### 3.2.1 Converting sf data frames to sp’s Spatial\* class
+
+The code chunk below uses as_Spatial() of sf package to convert the three geospatial data from simple feature data frame to sp’s Spatial\* class.
+
+```{r}
+childcare <- as_Spatial(childcare_sf)
+mpsz <- as_Spatial(mpsz_sf)
+sg <- as_Spatial(sg_sf)
+```
+
+Checking the conversion:
+
+```{r}
+childcare
+```
+
+```{r}
+mpsz
+```
+
+```{r}
+sg
+```
+
+The geospatial data have been converted into their respective sp’s Spatial\* classes now.
+
+#### 3.2.2 Defined Converting the Spatial\* class into generic sp format
+
+**spatstat** requires the analytical data in ***ppp*** object form. There is no direct way to convert a Spatial\* classes into ***ppp*** object. We need to convert the ***Spatial*** **classes**\* into ***Spatial*** object first.
+
+```{r}
+childcare_sp <- as(childcare, "SpatialPoints")
+sg_sp <- as(sg, "SpatialPolygons")
+```
+
+Checking the sp objects properties:
+
+```{r}
+childcare_sp
+```
+
+```{r}
+sg_sp
+```
+
+#### 3.2.3 **Converting the generic sp format into spatstat’s ppp format**
+
+Now, we will use *as.ppp()* function of **spatstat** to convert the spatial data into **spatstat**’s ***ppp*** object format.
+
+```{r}
+childcare_ppp_ <- as(childcare_sp, "ppp")
+childcare_ppp_
+```
+
+We can also use the code below to convert:
+
+```{r}
+childcare_ppp <- as.ppp(st_coordinates(childcare_sf), st_bbox(childcare_sf))
+```
+
+```{r}
+plot(childcare_ppp)
+```
+
+```{r}
+summary(childcare_ppp)
+```
+
+```{r}
+plot(childcare_ppp_)
+```
+
+```{r}
+summary(childcare_ppp_)
+```
+
+Notice that a warning about duplicates occurs. In spatial point patterns analysis, a significant issue is the presence of duplicates. The statistical methodology used for spatial points patterns processes is based largely on the assumption that processes are simple, that the points cannot be coincident. balls test
+
+The code below can check the duplication in ppp:
+
+```{r}
+any(duplicated(childcare_ppp))
+```
+
+To count the number of co-indicence point, we will use the multiplicity() function as shown in the code chunk below.
+
+```{r}
+multiplicity(childcare_ppp)
+```
+
+To know how many locations have more than one point event, we can use the code chunk below.
+
+```{r}
+sum(multiplicity(childcare_ppp) > 1)
+```
+
+To plots out the locations of the duplicate point events:
+
+```{r}
+tmap_mode('view')
+tm_shape(childcare) +
+  tm_dots(alpha=0.4, 
+          size=0.05)
+```
+
+We can use jittering to slightly shift the duplicate points such that they no longer occupy at the same space, to make them unique
+
+```{r}
+childcare_ppp <- rjitter(childcare_ppp, retry = TRUE, nsimm = 1, drop = TRUE)
+any(duplicated(childcare_ppp))
+```
+
+When analysing spatial point patterns, owin can be used to define a geographic boundary to confine our analysis
+
+#### 3.2.4 **Creating *owin* object**
+
+In **spatstat**, an object called ***owin*** is specially designed to represent this polygonal region.
+
+```{r}
+sg_owin <- as.owin(sg_sf)
+plot(sg_owin)
+```
+
+Checking the summary information:
+
+```{r}
+summary(sg_owin)
+```
+
+#### 3.2.5 **Combining point events object and owin object**
+
+The code below will extract the childcare events in Singapore, and combines both the point and polygon features into one ppp object:
+
+```{r}
+childcareSG_ppp = childcare_ppp[sg_owin]
+summary(childcareSG_ppp)
+```
+
+```{r}
+plot(childcareSG_ppp)
+```
+
+### **3.3 First** Order Spatial Point Pattern Analysis
+
+The density() function from spatstat computes a kernal density for a given set of point events. The diggle argument can be used to automatically select a bandwidth for computing the kernel density.
+
+#### **3.3.1 First** Order Spatial Point Pattern Analysis
+
+Computing a kernel density: 
+
+```{r}
+kde_childcareSG_bw <- density(childcareSG_ppp, sigma = bw.diggle, edge = TRUE, kernel = "gaussian")
+plot(kde_childcareSG_bw)
+```
+
+The bandwidth used to compute the kde layer can be retrieved by using the code chunk below
+
+```{r}
+bw <- bw.diggle(childcareSG_ppp)
+bw
+```
+
+```{r}
+childcareSG_ppp_km <- rescale(childcareSG_ppp, 1000, "km")
+kde_childcareSG_bw <- density(childcareSG_ppp_km, sigma = bw.diggle, edge = TRUE, kernel = "gaussian")
+plot(kde_childcareSG_bw)
+```
+
+Rescale the KDE Layers to convert the unit of measurement from m to km.
+
+```{r}
+childcareSG_ppp_km <- rescale(childcareSG_ppp, 1000, "km")
+kde_childcareSG_bw <- density(childcareSG_ppp_km, sigma = bw.diggle, edge = TRUE, kernel = "gaussian")
+plot(kde_childcareSG_bw)
+```
+
+Multiple bandwidth calculation methods are available from spatstat, some of which are covered below:
+
+Cronie and van Lieshout
+
+```{r}
+bw.CvL(childcareSG_ppp_km)
+```
+
+```{r}
+kde_childcareSG_bw_CvL <- density(childcareSG_ppp_km, sigma =  bw.CvL, edge = TRUE, kernel = "gaussian")
+```
+
+Scott’s Rule
+
+```{r}
+bw.scott(childcareSG_ppp_km)
+```
+
+```{r}
+kde_childcareSG_bw_scott <- density(childcareSG_ppp_km, sigma =  bw.scott, edge = TRUE, kernel = "gaussian")
+```
+
+Likelihood Cross Validation
+
+```{r}
+bw.ppl(childcareSG_ppp_km)
+```
+
+```{r}
+kde_childcareSG_bw_ppl <- density(childcareSG_ppp_km, sigma =  bw.ppl, edge = TRUE, kernel = "gaussian")
+```
+
+The plot below compares the above 3 methods with diggle
+
+```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
+plot(kde_childcareSG_bw, main = "bw.diggle")
+plot(kde_childcareSG_bw_CvL, main = "bw.CvL")
+plot(kde_childcareSG_bw_scott, main = "bw.scott")
+plot(kde_childcareSG_bw_ppl, main = "bw.ppl")
+```
+
+```{r}
+par(mfrow = c(2,2))
+par(mar = c(3,2,2,1))
+plot(density(childcareSG_ppp_km, sigma = bw.ppl, edge = TRUE, kernel = "gaussian"), main = "Gaussian")
+plot(density(childcareSG_ppp_km, sigma = bw.ppl, edge = TRUE, kernel = "epanechnikov"), main = "Epanechnikov")
+```
+
+Fixed Bandwidth In the code below, sigma is assigned a value of 0.6, whcih represents 0.6km.
+
+```{r}
+kde_childcareSG_600 <- density(childcareSG_ppp_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
+```
+
+A fixed bandwidth is sensitive to highly skewed distributions of spatial points, which can be alleviated by using an adaptive bandwidth.
+
+```{r}
+kde_childcareSG_adapt <- adaptive.density(childcareSG_ppp_km, method = "kernel")
+```
+
+Comparing the two:
+
+```{r}
+par(mfrow = c(1,2))
+par(mar = c(3,2,2,1))
+plot(kde_childcareSG_600)
+plot(kde_childcareSG_adapt)
+```
+
+The conversion of a KDE output into a grid object can be done to make it compatible with mapping applications.
+
+```{r}
+gridded_kde_childcareSG_bw <- as.SpatialGridDataFrame.im(kde_childcareSG_bw)
+spplot(gridded_kde_childcareSG_bw)
+```
+
+This gridded KDE object can be further converted into a raster layer.
+
+```{r}
+kde_childcareSG_bw_raster <- raster(gridded_kde_childcareSG_bw)
+kde_childcareSG_bw_raster
+```
+
+Setting the CRS:
+
+```{r}
+projection(kde_childcareSG_bw_raster) <- CRS("+init=EPSG:3414")
+kde_childcareSG_bw_raster
+```
+
+Visusalising the KDE raster layer:
+
+```{r}
+tm_shape(kde_childcareSG_bw_raster) + 
+  tm_raster("v", palette="plasma") +
+  tm_layout(legend.position = c("right", "bottom"), frame = FALSE)
+```
+
+Code below extracts the targeted planning areas:
+
+```{r}
+pg <- mpsz_sf %>% filter(PLN_AREA_N == "PUNGGOL")
+tm <- mpsz_sf %>% filter(PLN_AREA_N == "TAMPINES")
+ck <- mpsz_sf %>% filter(PLN_AREA_N == "CHOA CHU KANG")
+jw <- mpsz_sf %>% filter(PLN_AREA_N == "JURONG WEST")
+```
+
+```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
+plot(st_geometry(pg), main = "Punggol")
+plot(st_geometry(tm), main = "Tampines")
+plot(st_geometry(ck), main = "Choa Chu Kang")
+plot(st_geometry(jw), main = "Jurong West")
+```
+
+```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
+plot(pg, main = "Punggol")
+```
+
+```{r}
+plot(tm, main = "Tampines")
+```
+
+```{r}
+plot(ck, main = "Choa Chu Kang")
+```
+
+```{r}
+plot(jw, main = "Jurong West")
+```
+
+Converting these SpatialPolygon objects into owin objects:
+
+```{r}
+pg_owin <- as.owin(pg)
+tm_owin <- as.owin(tm)
+ck_owin <- as.owin(ck)
+jw_owin <- as.owin(jw)
+```
+
+Within each of the study planning areas, extract the childcare centre points :
+
+```{r}
+childcare_pg_ppp = childcare_ppp[pg_owin]
+childcare_tm_ppp = childcare_ppp[tm_owin]
+childcare_ck_ppp = childcare_ppp[ck_owin]
+childcare_jw_ppp = childcare_ppp[jw_owin]
+```
+
+Rescale from m to km:
+
+```{r}
+childcare_pg_ppp.km = rescale(childcare_pg_ppp, 1000, "km")
+childcare_tm_ppp.km = rescale(childcare_tm_ppp, 1000, "km")
+childcare_ck_ppp.km = rescale(childcare_ck_ppp, 1000, "km")
+childcare_jw_ppp.km = rescale(childcare_jw_ppp, 1000, "km")
+```
+
+Plot out the individual areas overlaid with their childcare centres:
+
+```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
+plot(childcare_pg_ppp.km, main="Punggol")
+plot(childcare_tm_ppp.km, main="Tampines")
+plot(childcare_ck_ppp.km, main="Choa Chu Kang")
+plot(childcare_jw_ppp.km, main="Jurong West")
+```
+
+Compute the KDE, using *diggle* to derive the bandwidth:
+
+```{r}
+par(mfrow = c(2,2))
+par(mar = c(3,2,2,1))
+plot(density(childcare_pg_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Punggol")
+plot(density(childcare_tm_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Tempines")
+plot(density(childcare_ck_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Choa Chu Kang")
+plot(density(childcare_jw_ppp.km, 
+             sigma=bw.diggle, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Jurong West")
+```
+
+Compute the KDE using a fixed bandwidth of 0.25km:
+
+```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
+plot(density(childcare_ck_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Chou Chu Kang")
+plot(density(childcare_jw_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="JUrong West")
+plot(density(childcare_pg_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Punggol")
+plot(density(childcare_tm_ppp.km, 
+             sigma=0.25, 
+             edge=TRUE, 
+             kernel="gaussian"),
+     main="Tampines")
+```
+
+### 3.4 Nearest Neighbour Analysis
+
+The test hypotheses are:
+
+Ho = The distribution of childcare services are randomly distributed.
+
+H1= The distribution of childcare services are not randomly distributed.
+
+The 95% confident interval will be used.
+
+```{r}
+clarkevans.test(childcareSG_ppp, correction = "none", clipregion = "sg_owin", alternative = c("clustered"), nsim = 99)
+```
+
+The R value from the above result indicates clustering, and as p \< 0.05, H0 can be rejected.
+
+Performing the same test on the target planning areas:
+
+**Tampines**
+
+```{r}
+clarkevans.test(childcare_tm_ppp, correction = "none", clipregion = "sg_owin", alternative = c("clustered"), nsim = 99)
+```
+
+The R value from the above result indicates clustering, and as p \< 0.05, H0 can be rejected.
+
+**Choa Chu Kang**
+
+```{r}
+clarkevans.test(childcare_ck_ppp, correction = "none", clipregion = "sg_owin", alternative = c("clustered"), nsim = 99)
+```
+
+As p \> 0.05, H0 cannot be rejected.
+
+**Punggol**
+
+```{r}
+clarkevans.test(childcare_pg_ppp, correction = "none", clipregion = "sg_owin", alternative = c("clustered"), nsim = 99)
+```
+
+As p \< 0.05, H0 can be rejected.
+
+**Jurong West**
+
+```{r}
+clarkevans.test(childcare_jw_ppp, correction = "none", clipregion = "sg_owin", alternative = c("clustered"), nsim = 99)
+```
+
+As p \< 0.05, H0 can be rejected.
+
+## 4 2nd Order Spatial Point Pattern Analysis
+
+The **G function** measures the distribution of the distances from an arbitrary even to its nearest event. G function on the Choa Chu Kang area:
+
+```{r}
+G_CK = Gest(childcare_ck_ppp, correction = "border")
+plot(G_CK, xlim=c(0,500))
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Choa Chu Kang
+
+-   H1: Non-Random distribution of childcare centres in Choa Chu Kang
+
+Reject H0 if p \< 0.001.
+
+```{r}
+G_CK.csr <- envelope(childcare_ck_ppp, Gest, nsim = 999)
+```
+
+```{r}
+plot(G_CK.csr)
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Tampines
+
+-   H1: Non-Random distribution of childcare centres in Tampines
+
+If p \< 0.001, reject H0.
+
+```{r}
+G_tm.csr <- envelope(childcare_tm_ppp, Gest, correction = "all", nsim = 999)
+```
+
+```{r}
+plot(G_tm.csr)
+```
+
+The **F function** estimates the empty space function F(r) or its hazard rate h(r) from a point pattern in a window of arbitrary shape.
+
+F function on the Choa Chu Kang area:
+
+```{r}
+F_CK = Fest(childcare_ck_ppp)
+plot(F_CK)
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Choa Chu Kang
+
+-   H1: Non-Random distribution of childcare centres in Choa Chu Kang
+
+If p \< 0.001, reject H0.
+
+```{r}
+F_CK.csr <- envelope(childcare_ck_ppp, Fest, nsim = 999)
+```
+
+```{r}
+plot(F_CK.csr)
+```
+
+F function on the Tampines area:
+
+```{r}
+F_tm = Fest(childcare_tm_ppp, correction = "best")
+plot(F_tm)
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Tampines
+
+-   H1: Non-Random distribution of childcare centres in Tampines
+
+If p \< 0.001, reject H0.
+
+```{r}
+F_tm.csr <- envelope(childcare_tm_ppp, Fest, correction = "all", nsim = 999)
+```
+
+```{r}
+plot(F_tm.csr)
+```
+
+The **K function** measures the number of events found up to a given distance of any particular event.
+
+K function on the Choa Chu Kang area:
+
+```{r}
+K_ck = Kest(childcare_ck_ppp, correction = "Ripley")
+plot(K_ck, . -r ~ r, ylab= "K(d)-r", xlab = "d(m)")
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Choa Chu Kang
+
+-   H1: Non-Random distribution of childcare centres in Choa Chu Kang
+
+If p \< 0.001, reject H0.
+
+```{r}
+K_ck.csr <- envelope(childcare_ck_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)
+```
+
+```{r}
+plot(K_ck.csr, . - r ~ r, xlab="d", ylab="K(d)-r")
+```
+
+K function on the Tampines area:
+
+```{r}
+K_tm = Kest(childcare_tm_ppp, correction = "Ripley")
+plot(K_tm, . -r ~ r, 
+     ylab= "K(d)-r", xlab = "d(m)", 
+     xlim=c(0,1000))
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Tampines
+
+-   H1: Non-Random distribution of childcare centres in Tampines
+
+If p \< 0.001, reject H0.
+
+```{r}
+K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)
+```
+
+```{r}
+plot(K_tm.csr, . - r ~ r, 
+     xlab="d", ylab="K(d)-r", xlim=c(0,500))
+```
+
+The **L function** is a transformation of the K function, designed to help in identifying clustering or regularity in spatial point patterns.
+
+L function on the Choa Chu Kang area:
+
+```{r}
+L_ck = Lest(childcare_ck_ppp, correction = "Ripley")
+plot(L_ck, . -r ~ r, 
+     ylab= "L(d)-r", xlab = "d(m)")
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Choa Chu Kang
+
+-   H1: Non-Random distribution of childcare centres in Choa Chu Kang
+
+If p \< 0.001, reject H0.
+
+```{r}
+L_ck.csr <- envelope(childcare_ck_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)
+```
+
+```{r}
+plot(L_ck.csr, . - r ~ r, xlab="d", ylab="L(d)-r")
+```
+
+L function on the Tampines area:
+
+```{r}
+L_tm = Lest(childcare_tm_ppp, correction = "Ripley")
+plot(L_tm, . -r ~ r, 
+     ylab= "L(d)-r", xlab = "d(m)", 
+     xlim=c(0,1000))
+```
+
+Perform a complete Spatial Randomness Test with the following hypotheses:
+
+-   H0: Random distribution of childcare centres in Tampines
+
+-   H1: Non-Random distribution of childcare centres in Tampines
+
+If p \< 0.001, reject H0.
+
+```{r}
+L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)
+```
+
+```{r}
+plot(L_tm.csr, . - r ~ r, 
+     xlab="d", ylab="L(d)-r", xlim=c(0,500))
+```

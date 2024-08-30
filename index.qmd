@@ -11,8 +11,6 @@ execute:
 
 This is a Quarto website.
 
-
-
 ```{r}
 
 ```

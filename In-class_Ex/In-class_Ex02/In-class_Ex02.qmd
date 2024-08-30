@@ -15,7 +15,6 @@ Required packages are installed using the code chunk below.
 pacman::p_load(sf, tidyverse)
 ```
 
-
 This import shapefile of mpsz 2014
 
 ```{r}
@@ -51,11 +50,13 @@ Check if class is data.frame
 ```{r}
 class(mpsz2019)
 ```
+
 Importing kml file of mpsz2019
 
 ```{r}
 mpsz2019_kml = st_read(dsn = "data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
 ```
+
 Handling Coordinate System
 
 check coordinate system
@@ -80,7 +81,6 @@ mpsz2019 <- st_read(dsn = "data",
 
 working with pop data
 
-
 ```{r}
 popdata <- read.csv("data/respopagesextod2023.csv")
 ```
@@ -97,6 +97,7 @@ popdata2023 <- popdata %>%
 
 colnames(popdata2023)
 ```
+
 data processing
 
 ```{r}
