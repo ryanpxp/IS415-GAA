@@ -50,6 +50,7 @@ Three data sets will be used:
 Code chunk below will be used to install and launch the five R packages.
 
 ```{r echo = FALSE}
+#| eval: false
 install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
 ```
 
@@ -101,9 +102,9 @@ tm_shape(sg_sf) + tm_polygons() + tm_shape(mpsz_sf) + tm_polygons() + tm_shape(c
 Alternatively, we can also prepare a pin map by using the code chunk below.
 
 ```{r}
-tmap_mode('view')
-tm_shape(childcare_sf)+
-  tm_dots()
+#tmap_mode('view')
+#tm_shape(childcare_sf)+
+#  tm_dots()
 ```
 
 ```{r}
@@ -213,10 +214,10 @@ sum(multiplicity(childcare_ppp) > 1)
 To plots out the locations of the duplicate point events:
 
 ```{r}
-tmap_mode('view')
-tm_shape(childcare) +
-  tm_dots(alpha=0.4, 
-          size=0.05)
+#tmap_mode('view')
+#tm_shape(childcare) +
+ # tm_dots(alpha=0.4, 
+  #        size=0.05)
 ```
 
 We can use jittering to slightly shift the duplicate points such that they no longer occupy at the same space, to make them unique
@@ -586,6 +587,7 @@ Perform a complete Spatial Randomness Test with the following hypotheses:
 Reject H0 if p \< 0.001.
 
 ```{r}
+set.seed(1234)
 G_CK.csr <- envelope(childcare_ck_ppp, Gest, nsim = 999)
 ```
 

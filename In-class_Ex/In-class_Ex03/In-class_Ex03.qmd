@@ -1,0 +1,62 @@
+---
+title: "In-class Exercise 3"
+author: "Ryan Peh"
+date: "September 2, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+---
+
+```{r}
+#| eval: false
+install.packages("maptools",
+                 repos = "https://packagemanager.posit.co/cran/2023-10-13")
+```
+
+```{r}
+pacman::p_load(tmap, sf, tidyverse, raster, spatstat, maptools, sp)
+```
+
+```{r}
+childcare_sf <- st_read("data/child-care-services-geojson.geojson") %>%
+  st_transform(crs = 3414)
+
+sg_sf <- st_read(dsn = "data", layer="CostalOutline") %>%
+  st_transform(crs = 3414)
+
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+sg_sf <- mpsz %>%
+  st_union()
+
+```
+
+```{r}
+sg_sf
+```
+```{r}
+#| eval: false
+#par(bg = '#')
+
+#gridded_kde_childcareSG_ad <- maptools::as.SpatialGridDataFrame.im(kde_childcareSG_adaptive)
+#spplot(gridded_kde_childcareSG_ad)
+```
+
+```{r}
+#gridded_kde_childcareSG_ad <- as()
+```
+
+take-home exercise 1
+```{r}
+#acled <- read_csv("data/Myanmar/ACLED_Myanmar.csv") %>%
+#  st_as_sf(coords = c(
+#    "longitude", "latitude"),
+#    crs = 4326) %>% 
+#  st_transform(crs = 32647) %>%
+#  mutate(event_date = dmy(event_date))
+```
