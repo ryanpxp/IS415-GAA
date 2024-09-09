@@ -1,0 +1,184 @@
+---
+title: "In-class_Ex04"
+author: "Ryan Peh"
+date: "September 9, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+---
+
+load package
+```{r}
+pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sparr)
+```
+
+
+import data
+```{r}
+
+kbb <- st_read(dsn="data/rawdata/", layer = "Kepulauan_Bangka_Belitung")
+#%>%st_transform(32748)
+```
+
+```{r}
+kbb
+```
+
+- have z entity when using view(kbb) (z polygon)-> need to drop the z property as it will crash
+
+- need to dissolve boundary
+
+- wgs 84, epsg code to look for the area > 
+
+
+revised code chunk
+```{r}
+kbb_sf <- st_read(dsn="data/rawdata/", layer = "Kepulauan_Bangka_Belitung") %>%
+  st_union() %>%
+  st_zm(drop = TRUE, what = "ZM") %>%
+  st_transform(crs = 32748)
+```
+
+use non sf to see error
+```{r}
+#kbb_owin1 <- as.owin(kbb)
+kbb_owin <- as.owin(kbb_sf)
+kbb_owin
+```
+
+use class to check sppp
+```{r}
+class(kbb_owin)
+```
+open csv file
+
+```{r}
+fire_sf <- read_csv("data/rawdata/forestfires.csv") %>%
+  st_as_sf(coords = c("longitude", "latitude"),
+           crs = 4326) %>%
+  st_transform(crs = 32748)
+```
+- read_csv belong to tidyverse package(family package - e.g. readr, stringr, tidyr ...)
+- st_as_sf convert to spatial data must be in this order of long and lat (always have to be this case because of x,y coord)
+- https://epsg.io/4326 4326 for the whole world
+
+for testing and comparison
+```{r}
+fire <- read_csv("data/rawdata/forestfires.csv")
+class(fire)
+```
+notice is a tibbl data frame
+
+
+ppp only accepts numerical or character as mark so need to convert date format to numerical (can be seen from the doc)
+```{r}
+fire_sf <- fire_sf %>%
+  mutate(DayOfYear = yday(acq_date)) %>%
+  mutate(Month_num = month(acq_date)) %>%
+  mutate(Month_fac = month(acq_date,
+                           label = TRUE,
+                           abbr = FALSE))
+```
+
+- fac make it it into like jan, feb instead of 1,2, save for map form when presenting data
+- lubridate is the package in tidyverse used for date field
+- acq_date is the name of the field for all this
+- mutate adds columns, need to overwrite to save to same var
+
+
+visualisation
+```{r}
+tm_shape(kbb_sf) + 
+  tm_polygons() +
+  tm_shape(fire_sf) + tm_dots()
+#tmap_mode('plot')
+```
+
+- tm_symbol if you have png for custom markers
+- tm_bubbles for proportional, will be relative to zoom, might block view
+- tm_dots don't map with size, can have different colours instead compared to bubbles, will have constant size when zoom in or our
+- polygon should be plot first before points, or will overlap unless polygon is transparent/translucent
+
+visualisation overtime(facets):
+```{r}
+tm_shape(kbb_sf) + 
+  tm_polygons() +
+  tm_shape(fire_sf) + 
+  tm_dots(size = 0.1) +
+  tm_facets(by="Month_fac",
+            free.coords = FALSE,
+            drop.units = TRUE)
+```
+
+- dot size self explanatory
+- by is sorting else will be alphabetical instead of month
+- free coord will zoom if not false
+- from chatgpt:
+In tmap (Thematic Map) plots, the argument drop.units in tm_facets() controls whether or not the coordinate units (geographical units like degrees, meters, etc.) are displayed alongside each facet's axes.
+
+When drop.units = TRUE, the units on the axes are not shown for each facet, reducing visual clutter.
+When drop.units = FALSE, the coordinate units are retained for each facet, which might be useful for maintaining clear axis information across multiple panels.
+In your case, setting drop.units = TRUE will hide the units in each facet for a cleaner presentation of the data in each individual month.
+
+sparr:
+can capture relative risk also, i.e. a control group 
+
+as.ppp()
+```{r}
+fire_month <- fire_sf %>%
+  dplyr::select(Month_num)
+```
+
+```{r}
+fire_month_ppp <- as.ppp(fire_month)
+fire_month_ppp
+```
+
+```{r}
+summary(fire_month_ppp)
+```
+
+```{r}
+fire_month_owin <- fire_month_ppp[kbb_owin]
+summary(fire_month_owin)
+```
+
+```{r}
+st_kde <- spattemp.density(fire_month_owin)
+summary(st_kde)
+```
+h = in metres
+lambda = 0.03 means 0.03 months
+can plot it to visualise
+we start from july because from visual before most of the fire start from july
+```{r}
+# | fig-width: 12
+# | fig-height: 10
+
+tims <- c(7,8,9,10,11,12)
+par(mfcols=c(2,3))
+for (i in tims) {
+  plot(st_kde, i,
+       override.par=FALSE,
+       fix.range=TRUE,
+       main=paste("KDE at month",i))
+}
+```
+
+- main paste is for title
+- quarto too cramp use fig width and height
+
+alternative method
+```{r}
+#kde_yday <- spattemp.density(
+ # fire_yday_owin
+#)
+#summary(kde_yday)
+```
+show all 300 days not efficient use a package to make animated map 
+sparr have a method
+```{r}
+
+```
+

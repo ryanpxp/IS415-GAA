@@ -218,6 +218,7 @@ To plots out the locations of the duplicate point events:
 #tm_shape(childcare) +
  # tm_dots(alpha=0.4, 
   #        size=0.05)
+tmap_mode()
 ```
 
 We can use jittering to slightly shift the duplicate points such that they no longer occupy at the same space, to make them unique

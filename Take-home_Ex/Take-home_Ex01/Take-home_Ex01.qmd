@@ -1,0 +1,60 @@
+---
+title: "Take-home_Ex01"
+author: "Ryan Peh"
+date: "September 7 30, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
+---
+
+## **1 Overview**
+
+### **1.1 Objective**
+
+To apply spatial point patterns analysis methods to discover the spatial and spatio-temporal distribution of armed conflict in Myanmar.
+
+### 1.2 Background
+
+## **2 Setup**
+
+### **2.1 Data**
+
+-   For the purpose of this assignment, armed conflict data of Myanmar between 2021-2024 from [Armed Conflict Location & Event Data (ACLED)](https://acleddata.com/), an independent, impartial, international non-profit organization collecting data on violent conflict and protest in all countries and territories in the world, should be used.
+
+    In terms of event types, students should focus on at least four main event types, namely: Battles, Explosion/Remote violence, Strategic developments, and Violence against civilians.
+
+    In terms of study period, students should focus on quarterly armed conflict events from January 2021 until June 2024.
+
+-   [Geospatial data](http://geonode.themimu.info/layers/?limit=100&offset=0) on [Myanmar Information Management Unit, MIMU](http://www.themimu.info/)
+
+## **3 The Task**
+
+The specific tasks of this take-home exercise are as follows:
+
+-   Using appropriate function of **sf** and **tidyverse** packages, import and transform the downloaded armed conflict data and administrative boundary data into sf tibble data.frames.
+
+-   Using the geospatial data sets prepared, derive quarterly KDE layers.
+
+-   Using the geospatial data sets prepared, perform 2nd-Order Spatial Point Patterns Analysis.
+
+-   Using the geospatial data sets prepared, derive quarterly spatio-temporal KDE layers.
+
+-   Using the geospatial data sets prepared, perform 2nd-Order Spatio-temporal Point Patterns Analysis.
+
+-   Using appropriate **tmap** functions, display the KDE and Spatio-temporal KDE layers on openstreetmap of Myanmar.
+
+-   Describe the spatial patterns revealed by the KDE and Spatio-temporal KDE maps.
+
+```{r}
+pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp)
+```
+
+```{r}
+mymdata <- read.csv("data/ACLED_Myanmar_2021_2024.csv")
+```
+
+```{r}
+mymdata 
+```

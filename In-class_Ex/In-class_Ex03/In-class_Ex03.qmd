@@ -31,13 +31,13 @@ mpsz_sf <- st_read(dsn = "data",
 ```
 
 ```{r}
-sg_sf <- mpsz %>%
-  st_union()
+#sg_sf <- mpsz %>%
+#  st_union()
 
 ```
 
 ```{r}
-sg_sf
+#sg_sf
 ```
 ```{r}
 #| eval: false
