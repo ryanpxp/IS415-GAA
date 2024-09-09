@@ -48,13 +48,13 @@ The specific tasks of this take-home exercise are as follows:
 -   Describe the spatial patterns revealed by the KDE and Spatio-temporal KDE maps.
 
 ```{r}
-pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp)
+#pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp)
 ```
 
 ```{r}
-mymdata <- read.csv("data/ACLED_Myanmar_2021_2024.csv")
+#mymdata <- read.csv("data/ACLED_Myanmar_2021_2024.csv")
 ```
 
 ```{r}
-mymdata 
+#mymdata 
 ```

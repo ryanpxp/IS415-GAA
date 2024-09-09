@@ -92,7 +92,7 @@ visualisation
 tm_shape(kbb_sf) + 
   tm_polygons() +
   tm_shape(fire_sf) + tm_dots()
-#tmap_mode('plot')
+tmap_mode('plot')
 ```
 
 - tm_symbol if you have png for custom markers
@@ -178,7 +178,4 @@ alternative method
 ```
 show all 300 days not efficient use a package to make animated map 
 sparr have a method
-```{r}
-
-```
 
