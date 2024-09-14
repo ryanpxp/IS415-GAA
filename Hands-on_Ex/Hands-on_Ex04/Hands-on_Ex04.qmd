@@ -1,0 +1,12 @@
+---
+title: "Hands-on_Ex04"
+author: "Ryan Peh"
+date: "September 14, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
+---
+
+See in class exercise 4.
