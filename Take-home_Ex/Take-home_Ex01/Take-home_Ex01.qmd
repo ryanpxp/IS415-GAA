@@ -48,13 +48,34 @@ The specific tasks of this take-home exercise are as follows:
 -   Describe the spatial patterns revealed by the KDE and Spatio-temporal KDE maps.
 
 ```{r}
-#pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp)
+pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp)
 ```
 
 ```{r}
-#mymdata <- read.csv("data/ACLED_Myanmar_2021_2024.csv")
+myanmar <- st_read(dsn = "data/raw/geospatial", 
+                 layer = "mmr_polbnda_adm1_250k_mimu_1")
 ```
 
 ```{r}
-#mymdata 
+myanmar
+```
+
+```{r}
+myanmar_conflict <- read_csv("data/raw/ACLED_Myanmar_2021_2024.csv") %>%
+  st_as_sf(coords = c("longitude", "latitude"),
+                       crs = 4326)  %>%
+  st_transform(crs = 32646)
+```
+
+```{r}
+tm_shape(myanmar) +
+  tm_polygons()
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```

@@ -88,7 +88,7 @@ popdata2020 <- popdata %>%
   mutate(`AGED` = rowSums(.[16:21])) %>%
   mutate(`TOTAL` = rowSums(.[3:21])) %>%
   mutate(`DEPENDENCY` = (`YOUNG` + `AGED`)/`ECONOMY ACTIVE`) %>%
-  select(`PA`, `SZ`, `YOUNG`, `ECONOMY ACTIVE`, `AGED`, `TOTAL`, `DEPENDENCY`)
+  dplyr::select(`PA`, `SZ`, `YOUNG`, `ECONOMY ACTIVE`, `AGED`, `TOTAL`, `DEPENDENCY`)
 ```
 
 ### 3.2 Joining attribute and geospatial data
