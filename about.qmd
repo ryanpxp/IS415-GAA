@@ -8,3 +8,7 @@ about:
       text: Github
       href: https://github.com/ryanpxp
 ---
+
+## Education
+
+Singapore Management University\| Singapore, Computer Science \| Aug 2021 - Present

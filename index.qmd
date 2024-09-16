@@ -3,8 +3,4 @@ title: "Home"
 listing: default
 ---
 
-## Education
-
-Singapore Management University\| Singapore, Computer Science \| Aug 2021 - Present
-
-### Directory: 
+### Directory:
