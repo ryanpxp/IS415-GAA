@@ -47,29 +47,211 @@ The specific tasks of this take-home exercise are as follows:
 
 -   Describe the spatial patterns revealed by the KDE and Spatio-temporal KDE maps.
 
+## **4 Data preparation**
+
+
+### **4.1 Importing packages**
+
 ```{r}
-pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp)
+pacman::p_load(tmap, sf, tidyverse, raster, spatstat, sp, lubridate, sparr)
 ```
+
 
 ```{r}
 myanmar <- st_read(dsn = "data/raw/geospatial", 
-                 layer = "mmr_polbnda_adm1_250k_mimu_1")
+                 layer = "mmr_polbnda_adm1_250k_mimu_1")%>%
+  st_transform(crs = 32748)
 ```
 
+Prepare owin object
 ```{r}
-myanmar
+myanmar_owin <- as.owin(myanmar)
+myanmar_owin
 ```
 
+
+since no coord and date in wrong format
 ```{r}
+#| eval: false
 myanmar_conflict <- read_csv("data/raw/ACLED_Myanmar_2021_2024.csv") %>%
+  mutate(event_date = dmy(event_date)) %>%
   st_as_sf(coords = c("longitude", "latitude"),
-                       crs = 4326)  %>%
-  st_transform(crs = 32646)
+                       crs = 4326)%>%
+  st_transform(crs = 32748)
+```
+
+Add decimal format with year and quarter
+Add formatted string "YYYY QX"
+```{r}
+#| eval: false
+myanmar_conflict <- myanmar_conflict %>% 
+  mutate(DayofYear = yday(event_date)) %>%
+  mutate(Month_num = month(event_date)) %>%
+  mutate(Month_fac = month(event_date, 
+                           label = TRUE, 
+                           abbr = FALSE)) %>%
+  mutate(Quarter_decimal = quarter(event_date, with_year = TRUE)) %>%
+  mutate(Quarter_label = paste(year(event_date), "Q", quarter(event_date), sep = "")) %>%
+  mutate(Quarter_sequence = (year(event_date) - 2021) * 4 + quarter(event_date))
+
+```
+
+
+```{r}
+#| eval: false
+write_rds(myanmar_conflict, "data/rds/myanmar_conflict.rds")
+```
+
+
+```{r}
+myanmar_conflict <- read_rds("data/rds/myanmar_conflict.rds")
+```
+
+
+```{r}
+unique(myanmar_conflict$event_type)
+```
+
+overall plot
+
+```{r}
+tm_shape(myanmar) +
+  tm_polygons() + tm_shape(myanmar_conflict) + tm_dots()
 ```
 
 ```{r}
 tm_shape(myanmar) +
-  tm_polygons()
+  tm_polygons() + 
+  tm_shape(myanmar_conflict) + 
+  tm_dots() + 
+  tm_facets("year")
+```
+
+```{r}
+tm_shape(myanmar)+
+  tm_polygons() +
+tm_shape(myanmar_conflict) +
+  tm_dots() +
+tm_facets(by="Quarter_label", 
+            free.coords=FALSE, 
+            drop.units = TRUE)
+```
+```{r}
+tm_shape(myanmar)+
+  tm_polygons() +
+tm_shape(myanmar_conflict) +
+  tm_dots() +
+tm_facets(by="Quarter_decimal", 
+            free.coords=FALSE, 
+            drop.units = TRUE)
+```
+
+```{r}
+myanmar_conflict_quarterly <- myanmar_conflict %>% 
+  #dplyr::select(Quarter_decimal)
+  dplyr::select(Quarter_sequence)
+
+```
+
+```{r}
+myanmar_conflict_quarterly_ppp <- as.ppp(myanmar_conflict_quarterly)
+myanmar_conflict_quarterly_ppp
+```
+
+```{r}
+summary(myanmar_conflict_quarterly_ppp)
+```
+
+```{r}
+any(duplicated(myanmar_conflict_quarterly_ppp))
+```
+
+```{r}
+myanmar_conflict_quarterly_ppp <- rjitter(myanmar_conflict_quarterly_ppp, retry = TRUE, nsimm = 1, drop = TRUE)
+any(duplicated(myanmar_conflict_quarterly_ppp))
+```
+
+```{r}
+plot(myanmar_owin)
+```
+
+```{r}
+myanmar_conflict_quarterly_Map_ppp = myanmar_conflict_quarterly_ppp[myanmar_owin]
+summary(myanmar_conflict_quarterly_Map_ppp)
+```
+
+```{r}
+plot(myanmar_conflict_quarterly_Map_ppp)
+```
+
+```{r}
+myanmar_conflict_quarterly_Map_bw <- density(myanmar_conflict_quarterly_Map_ppp, sigma = bw.diggle, edge = TRUE, kernel = "gaussian")
+plot(myanmar_conflict_quarterly_Map_bw)
+```
+
+test
+```{r}
+#| eval: false
+st_kde <- spattemp.density(myanmar_conflict_quarterly_Map_ppp)
+summary(st_kde)
+```
+test
+```{r}
+#| eval: false
+# 1 to 14 for each quarter
+tims <- c(1:14)
+par(mfcol=c(2,2), 
+    mar=c(1, 1, 2, 1),
+    cex.axis=0.7,        
+    cex.main=0.8)
+
+# function to map tims to "Year QQuarter"
+get_quarter_label <- function(i) {
+  year <- 2021 + (i - 1) %/% 4  # Calculate the year
+  quarter <- (i - 1) %% 4 + 1   # Calculate the quarter (1 to 4)
+  return(paste(year, "Q", quarter, sep = ""))
+}
+
+for(i in tims){ 
+  plot(st_kde, i, 
+       override.par=FALSE, 
+       fix.range=TRUE, 
+       main=get_quarter_label(i))
+}
+
+```
+
+
+```{r}
+myanmar_conflict_quarterly_Map_ppp_km <- rescale.ppp(myanmar_conflict_quarterly_Map_ppp, 1000, "km")
+
+bw.diggle(myanmar_conflict_quarterly_Map_ppp_km)
+```
+
+```{r}
+myanmar_conflict_quarterly_Map_bw <- density(myanmar_conflict_quarterly_Map_ppp_km, sigma = bw.diggle, edge = TRUE, kernel = "gaussian")
+plot(myanmar_conflict_quarterly_Map_bw)
+```
+```{r}
+myanmar_conflict_quarterly_Map_bw10 <- density(myanmar_conflict_quarterly_Map_ppp_km, sigma = 10, edge = TRUE, kernel = "gaussian")
+myanmar_conflict_quarterly_Map_bw25 <- density(myanmar_conflict_quarterly_Map_ppp_km, sigma = 25, edge = TRUE, kernel = "gaussian")
+myanmar_conflict_quarterly_Map_bw50 <- density(myanmar_conflict_quarterly_Map_ppp_km, sigma = 50, edge = TRUE, kernel = "gaussian")
+myanmar_conflict_quarterly_Map_bw100 <- density(myanmar_conflict_quarterly_Map_ppp_km, sigma = 100, edge = TRUE, kernel = "gaussian")
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
+plot(myanmar_conflict_quarterly_Map_bw10, main = "10")
+plot(myanmar_conflict_quarterly_Map_bw25, main = "25")
+plot(myanmar_conflict_quarterly_Map_bw50, main = "50")
+plot(myanmar_conflict_quarterly_Map_bw100, main = "100")
+```
+
+```{r}
+kde_childcareSG_adaptive <- adaptive.density(childcareSG_ppp.km, method="kernel")
+plot(kde_childcareSG_adaptive)
 ```
 
 ```{r}
