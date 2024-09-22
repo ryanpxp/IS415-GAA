@@ -288,7 +288,7 @@ plot(myanmar_owin)
 ```
 
 ```{r}
-#| echo: false
+#| eval: false
 summary(myanmar_owin)
 ```
 
@@ -314,7 +314,7 @@ conflictmyanmar_ppp_list <- map(jittered_ppp_list, ~ merge_ppp_owin_func(.x, mya
 Object combines both the point and polygon feature in one `ppp` object class.
 
 ```{r}
-#| echo: false
+#| eval: false
 summary(conflictmyanmar_ppp_list[["2021.Q1"]])
 ```
 
@@ -355,9 +355,8 @@ any(duplicated(conflict_quarterly_ppp))
 ### **5.2.4 Creating point events objects in *owin* Object**
 
 ```{r}
-#| echo: false
 conflict_quarterly_Map_ppp = conflict_quarterly_ppp[myanmar_owin]
-summary(conflict_quarterly_Map_ppp)
+#summary(conflict_quarterly_Map_ppp)
 ```
 
 ## **5.3 OpenStreetMap**
