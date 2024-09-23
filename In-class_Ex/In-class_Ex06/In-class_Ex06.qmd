@@ -1,0 +1,239 @@
+---
+title: "In-class_Ex06"
+author: "Ryan Peh"
+date: "September 9, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+---
+
+new package sfdep
+
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse)
+```
+
+```{r}
+hunan <- st_read(dsn = "data/geospatial", 
+                 layer = "Hunan")
+```
+
+```{r}
+hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
+```
+
+```{r}
+hunan <- left_join(hunan,hunan2012) %>%
+  dplyr::select(1:4, 7, 15)
+```
+
+wm_q is now all in a data table, nb (neighbour) can now be seen without printing it out mutate will insert to the back so .before = 1 make it insert to the front wt will make a weight of its neighbours
+
+```{r}
+wm_q <- hunan %>%
+  mutate(nb = st_contiguity(geometry),
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
+```
+
+should be same output as hoe6 since it uses the same library usually dont use thsi since this is basic test
+
+```{r}
+moranI <- global_moran(wm_q$GDPPC,
+                       wm_q$nb,
+                       wm_q$wt)
+glimpse(moranI)
+```
+
+global moran I' test test random distribution mainly focus on p value of 1e-6 \< 0.05 enough statistical confidence to reject null hypothesis and moran I statistic means signs of clustering, since 0.3 so relatively low clustering
+
+Global 1) look a p-value first to see if fail to reject h0 if greater than h0
+
+2)  
+
+```{r}
+global_moran_test(wm_q$GDPPC,
+                  wm_q$nb,
+                  wm_q$wt)
+```
+
+Step 1
+
+to make it reproducible
+
+```{r}
+set.seed(1234)
+```
+
+step 2 nsim at least have 100 trials result is the same so its stable more confident because try 100 times
+
+```{r}
+global_moran_perm(wm_q$GDPPC,
+                       wm_q$nb,
+                       wm_q$wt,
+                  nsim = 99)
+```
+
+Local moran I unnest to put it back into single tibble table sometimes have many neighbours, one to many, but need to make it into a single table without unnest cannot see the tibble form
+
+in the table ii is local moran I. there is 3 p values columns, p_ii is using base method, p_folded_sim based on pysal algorithm which use k4 all p values can be used but must be consistent
+
+p_ii_sim is the 100 runs
+
+mean is to label hot spot,hh ll etc cluster hoe6 need to manually create but with this it can help to label out directly again with 3 diff, mean , median , pysal if value represent normal distribution use mean,
+
+if data is skewed use median is better excessive skewness like this data set use median unless like closer to 0 use mean since this is standardised can plot out the skewness to see
+
+```{r}
+lisa <- wm_q %>% 
+  mutate(local_moran = local_moran(
+    GDPPC, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+```
+
+## visualise moran I map
+
+need to make sure the correct column is used
+
+```{r}
+tmap_mode("plot")
+tm_shape(lisa) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of GDPPC",
+            main.title.size = 1.5)
+```
+
+## visualise p-value of moran I map
+
+```{r}
+tmap_mode("plot")
+tm_shape(lisa) +
+  tm_fill("p_ii_sim") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of GDPPC",
+            main.title.size = 1.5)
+```
+
+## visualise pvalue and local moran I
+
+when want to put them together for ez comparison
+
+when ploting one no need to put into var since in cache but if want two use var
+
+this is good for discussion
+
+```{r}
+tmap_mode("plot")
+map1 <- tm_shape(lisa) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of GDPPC",
+            main.title.size = 0.8)
+
+map2 <- tm_shape(lisa) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
+```
+
+visualising LISA map
+
+context is important, here is gdppc HL and LH outliers 2 clusters HH adn LL lisa map is an interpreted map by combining local mroan I of geographical areas and their respective p values
+
+we use mean here important to filter p value \<0.05 for significance
+
+```{r}
+lisa_sig <- lisa %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa_sig) + 
+  tm_fill("mean") +
+  tm_borders(alpha = 0.4)
+```
+
+## Local Gi\* statistics
+
+two Gi statistic one with asterik \* and one without, asterisk will include self weight her use some formula
+
+dont need to care aboutinclude or exclude self here since it does everything but next step will decide to include or not
+
+```{r}
+wm_idw <- hunan %>%
+  mutate(nb = st_contiguity(geometry),
+         wts = st_inverse_distance(nb, geometry,
+                                   scale = 1,
+                                   alpha = 1),
+         .before = 1)
+```
+
+use star will include nostar exclude self
+
+important is the pvalue gistar and the cluster label col
+
+```{r}
+HCSA <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    GDPPC, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+HCSA
+```
+
+## visualising gi star
+
+Hot spots and cold spots when use lisa method is clusters and outliers and in gi stat use hot spot and cold spot make sure to use the right terms even tho hot and cold spots are cluster
+
+```{r}
+tmap_mode("plot")
+tm_shape(HCSA) +
+  tm_fill("gi_star") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8))
+```
+
+## visualising hot and cold spot areas
+
+plot significant hot and cold spots area
+
+by right **need to map by clusters not gi_star**
+
+```{r}
+HCSA_sig <- HCSA %>%
+  filter(p_sim < 0.05)
+tmap_mode("plot")
+tm_shape(HCSA) +
+  tm_polygons() +
+  tm_borders(alpha = 0.5) +
+  tm_shape(HCSA_sig) +
+  tm_fill("gi_star") +
+  tm_borders(alpha = 0.5)
+```
+
+done with clusters instead of gistar
+
+```{r}
+HCSA_sig <- HCSA %>%
+  filter(p_sim < 0.05)
+tmap_mode("plot")
+tm_shape(HCSA) +
+  tm_polygons() +
+  tm_borders(alpha = 0.5) +
+  tm_shape(HCSA_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+```
