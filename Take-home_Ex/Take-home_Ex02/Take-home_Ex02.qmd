@@ -1,0 +1,384 @@
+---
+title: "Take-home Exercise 02"
+author: "Ryan Peh"
+date: "September 25, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  freeze: true
+---
+
+# **Take-home Exercise 2: Application of Geospatial Analysis Methods to Discover Thailand Drug Abuse at the Province Level**
+
+## Background
+
+Drug abuse is associated with significant negative health, financial and social consequences. Yet, illicit drug consumption remains highly prevalent and continues to be a growing problem worldwide. In 2021, 1 in 17 people aged 15–64 in the world had used a drug in the past 12 months. Notwithstanding population growth, the estimated number of drug users grew from 240 million in 2011 to 296 million in 2021.
+
+The geopolitics of Thailand which is near the [Golden Triangle](https://en.wikipedia.org/wiki/Golden_Triangle_(Southeast_Asia)) of Indochina, the largest drug production site in Asia, and the constant transportation infrastructure development made Thailand became market and transit routes for drug trafficking to the third countries.
+
+In Thailand, drug abuse is one of the major social issue. There are about 2.7 million youths using drugs in Thailand. Among youths aged between 15 and 19 years, there are about 300,000 who have needs for drug treatment. Most of Thai youths involved with drugs are vocational-school students, which nearly doubles in number compared to secondary-school students.
+
+## **Objectives**
+
+As a curious geospatial analytics green horn, you are interested to discover:
+
+-   if the key indicators of drug abuse of Thailand are independent from space.
+
+-   If the indicators of drug abuse is indeed spatial dependent, then, you would like to detect where are the clusters and outliers, and the hotspots.
+
+-   Last but not least, you are also interested to investigate how the observation above evolve over time.
+
+## **The Task**
+
+The specific tasks of this take-home exercise are as follows:
+
+-   Using appropriate function of **sf** and **tidyverse**, preparing the following geospatial data layer:
+
+    -   a study area layer in sf polygon features. It must be at [province level](https://en.wikipedia.org/wiki/Provinces_of_Thailand) (including Bangkok) of Thailand.
+
+    -   a drug abuse indicators layer within the study area in sf polygon features.
+
+-   Using the extracted data, perform global spatial autocorrelation analysis by using [sfdep methods](https://is415-gaa-tskam.netlify.app/in-class_ex/in-class_ex05/in-class_ex05-glsa).
+
+-   Using the extracted data, perform local spatial autocorrelation analysis by using [sfdep methods](https://r4gdsa.netlify.app/chap10.html).
+
+-   Describe the spatial patterns revealed by the analysis above.
+
+## **The Data**
+
+For the purpose of this take-home exercise, two data sets shall be used, they are:
+
+-   [Thailand Drug Offenses \[2017-2022\]](https://www.kaggle.com/datasets/thaweewatboy/thailand-drug-offenses-2017-2022) at Kaggle.
+
+-   [Thailand - Subnational Administrative Boundaries](https://data.humdata.org/dataset/cod-ab-tha?) at HDX. You are required to use the province boundary data set.
+
+## Importing Package
+
+```{r}
+pacman::p_load(sf, spdep, tmap, tidyverse)
+```
+
+```{r}
+thai <- st_read(dsn = "data/raw/Thailand_shp", 
+                 layer = "tha_admbnda_adm1_rtsd_20220121")
+```
+
+```{r}
+drugs_sf <- read_csv("data/raw/thai_drug_offenses_2017_2022.csv")
+```
+
+## Mismatched Province
+
+By checking on the naming of the province from both the geospatial and aspatial data, we can see that some of the namings are mismatched. This would cause problems when handling the data.
+
+```{r}
+comparison_df <- data.frame(
+  Geospatial = sort(unique(thai$ADM1_EN)),
+  Aspatial = sort(unique(drugs_sf$province_en))
+)
+
+print(comparison_df)
+```
+
+The identified mismatches are:
+
+| Geospatial | Aspatial |
+|------------|----------|
+| Bueng Kan  | buogkan  |
+| Lop Buri   | Loburi   |
+
+```{r}
+drugs_sf <- drugs_sf %>%
+  mutate(province_en = recode(province_en,
+                              "buogkan" = "Bueng Kan",
+                              "Loburi" = "Lop Buri"))
+
+print(sort(unique(drugs_sf$province_en)))
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
