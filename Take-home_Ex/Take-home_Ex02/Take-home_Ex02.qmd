@@ -98,7 +98,7 @@ print(sort(unique(drugs_sf$province_en)))
 ```
 
 ```{r}
-
+plot(thai)
 ```
 
 ```{r}

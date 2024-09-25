@@ -1,6 +1,8 @@
 ---
 title: "Home"
-listing: default
+listing: 
+  type: default
+  sort: "modified desc"
 ---
 
 ### Directory:
