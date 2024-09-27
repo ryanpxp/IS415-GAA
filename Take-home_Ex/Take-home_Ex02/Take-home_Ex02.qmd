@@ -56,16 +56,37 @@ For the purpose of this take-home exercise, two data sets shall be used, they ar
 ## Importing Package
 
 ```{r}
-pacman::p_load(sf, spdep, tmap, tidyverse)
+pacman::p_load(sf, sfdep, tmap, tidyverse)
 ```
 
+### Geospatial data
 ```{r}
 thai <- st_read(dsn = "data/raw/Thailand_shp", 
                  layer = "tha_admbnda_adm1_rtsd_20220121")
 ```
+### Study area
+
+![Breakdown of Provinces of Thailand](data\raw\Thailand_provinces_en.svg.png){width=100% style="object-fit: contain;"}
 
 ```{r}
-drugs_sf <- read_csv("data/raw/thai_drug_offenses_2017_2022.csv")
+tm_shape(thai) + 
+  tm_fill("ADM1_EN",
+          title = "Study Area: Thailand Provinces",
+          palette = "inferno") +
+  tm_borders() +
+  tm_layout(legend.show = FALSE)
+```
+
+
+### checks for holes
+```{r}
+u_thai <- st_union(thai)
+plot(u_thai)
+```
+
+### Aspatial Data
+```{r}
+drugs <- read_csv("data/raw/thai_drug_offenses_2017_2022.csv")
 ```
 
 ## Mismatched Province
@@ -75,7 +96,7 @@ By checking on the naming of the province from both the geospatial and aspatial 
 ```{r}
 comparison_df <- data.frame(
   Geospatial = sort(unique(thai$ADM1_EN)),
-  Aspatial = sort(unique(drugs_sf$province_en))
+  Aspatial = sort(unique(drugs$province_en))
 )
 
 print(comparison_df)
@@ -89,47 +110,110 @@ The identified mismatches are:
 | Lop Buri   | Loburi   |
 
 ```{r}
-drugs_sf <- drugs_sf %>%
+drugs <- drugs %>%
   mutate(province_en = recode(province_en,
                               "buogkan" = "Bueng Kan",
                               "Loburi" = "Lop Buri"))
 
-print(sort(unique(drugs_sf$province_en)))
+print(sort(unique(drugs$province_en)))
 ```
 
 ```{r}
-plot(thai)
+offense_types <- c("drug_use_cases", "suspects_in_drug_use_cases")
+
+drugs_by_year <- list()
+
+for (year in 2017:2022) {
+  drugs_by_year[[as.character(year)]] <- left_join(thai, drugs, by = c("ADM1_EN" = "province_en")) %>%
+    dplyr::select(1:3, 17:19,21) %>%
+    filter(fiscal_year == year, types_of_drug_offenses %in% offense_types)
+}
+
+glimpse(drugs_by_year[["2018"]])
+```
+
+
+```{r}
+for (year in 2017:2022) {
+  map <- tm_shape(drugs_by_year[[as.character(year)]]) +
+    tm_fill("no_cases",
+            n = 5,
+            style = "equal") +  
+    tm_borders(alpha = 0.5) +
+    tm_layout(main.title = paste("Equal interval classification - Fiscal Year", year))
+  
+  print(map)
+}
+```
+## Just 2017
+```{r}
+wm_q2017 <- drugs_by_year[["2017"]] %>%
+  mutate(nb = st_contiguity(geometry),
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
+```
+## 2017 to 2022
+```{r}
+#| eval: false
+for (year in 2017:2022) {
+  wm_q <- drugs_by_year[[as.character(year)]] %>%
+    mutate(nb = st_contiguity(geometry),
+           wt = st_weights(nb, style = "W"),
+           .before = 1)
+  
+  moran_results[[as.character(year)]]$weights <- wm_q
+}
+```
+
+```{r}
+#| eval: false
+  moranI <- global_moran(moran_results[[as.character(year)]]$weights$no_cases,
+                         moran_results[[as.character(year)]]$weights$nb,
+                         moran_results[[as.character(year)]]$weights$wt)
+  
+  # Store global Moran's I results
+  moran_results[[as.character(year)]]$global_moran <- moranI
+}
+```
+
+```{r}
+moranI2017 <- global_moran(wm_q2017$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt)
+glimpse(moranI2017)
 ```
 
 ```{r}
 
-```
-
-
-
-```{r}
-
+set.seed(1234)
 ```
 
 ```{r}
-
+global_moran_perm(wm_q2017$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt,
+                  nsim = 99)
 ```
 
 ```{r}
-
+lisa <- wm_q2017 %>% 
+  mutate(local_moran = local_moran(
+    no_cases, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
 ```
 
 ```{r}
-
+tmap_mode("plot")
+tm_shape(lisa) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of No of cases",
+            main.title.size = 1.5)
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```
 
 ```{r}
 
