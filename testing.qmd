@@ -1,0 +1,16 @@
+---
+title: "testings"
+---
+::: panel-tabset
+### Do It Yourself!
+
+Using the steps you learned in previous lesson, import *Hunan* shapefile into R environment as an sf data frame.
+
+### The code
+
+::: {style="font-size: 1.5em"}
+```{r}
+pacman::p_load(sfdep)
+```
+:::
+:::

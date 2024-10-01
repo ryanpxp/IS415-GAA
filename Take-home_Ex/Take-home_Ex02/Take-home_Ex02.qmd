@@ -60,15 +60,18 @@ pacman::p_load(sf, sfdep, tmap, tidyverse)
 ```
 
 ### Geospatial data
+
 ```{r}
 thai <- st_read(dsn = "data/raw/Thailand_shp", 
                  layer = "tha_admbnda_adm1_rtsd_20220121")
 ```
+
 ### Study area
 
-![Breakdown of Provinces of Thailand](data\raw\Thailand_provinces_en.svg.png){width=100% style="object-fit: contain;"}
+![Breakdown of Provinces of Thailand](data\raw\Thailand_provinces_en.svg.png){width="100%" style="object-fit: contain;"}
 
 ```{r}
+#| echo: false
 tm_shape(thai) + 
   tm_fill("ADM1_EN",
           title = "Study Area: Thailand Provinces",
@@ -77,14 +80,15 @@ tm_shape(thai) +
   tm_layout(legend.show = FALSE)
 ```
 
-
 ### checks for holes
+
 ```{r}
 u_thai <- st_union(thai)
 plot(u_thai)
 ```
 
 ### Aspatial Data
+
 ```{r}
 drugs <- read_csv("data/raw/thai_drug_offenses_2017_2022.csv")
 ```
@@ -109,31 +113,51 @@ The identified mismatches are:
 | Bueng Kan  | buogkan  |
 | Lop Buri   | Loburi   |
 
+We will have to change these province names in the aspatial data to match those in the geospatial daata.
+
+::: panel-tabset
+### The code
+
 ```{r}
 drugs <- drugs %>%
   mutate(province_en = recode(province_en,
                               "buogkan" = "Bueng Kan",
                               "Loburi" = "Lop Buri"))
 
-print(sort(unique(drugs$province_en)))
 ```
 
-```{r}
-offense_types <- c("drug_use_cases", "suspects_in_drug_use_cases")
+### Checking the Output
 
+We can see that both **buogkan** and **Loburi** is now changed into **Bueng** **Kan** and **Lop** **Buri**
+
+```{r}
+print(sort(unique(drugs$province_en)))
+```
+:::
+
+Taking a peek at the type of drug offenses,
+
+```{r}
+unique(drugs$types_of_drug_offenses)
+```
+
+Since we will only focus on drug abuse, we would be only extracting the "drug_use_cases" from the types of drug offenses.We will also break up the data into years for visualisation.
+
+```{r}
 drugs_by_year <- list()
 
 for (year in 2017:2022) {
   drugs_by_year[[as.character(year)]] <- left_join(thai, drugs, by = c("ADM1_EN" = "province_en")) %>%
     dplyr::select(1:3, 17:19,21) %>%
-    filter(fiscal_year == year, types_of_drug_offenses %in% offense_types)
+    filter(fiscal_year == year, types_of_drug_offenses == "drug_use_cases")
 }
 
 glimpse(drugs_by_year[["2018"]])
 ```
 
-
 ```{r}
+par(mfrow=c(2,2))
+par(mar = c(3,2,2,1))
 for (year in 2017:2022) {
   map <- tm_shape(drugs_by_year[[as.character(year)]]) +
     tm_fill("no_cases",
@@ -145,43 +169,159 @@ for (year in 2017:2022) {
   print(map)
 }
 ```
-## Just 2017
+
+## Neighbour data
+
+As vertical, horizontal and diagonal neighbours of the province are close enough to travel to and influence each other. WE would be using Queen's neighbour criteria.
+
+To get a quick view on the neighbours of the provinces, we can plot out the neighbours.
+
+```{r}
+# Calculate contiguity neighbors
+nb <- st_contiguity(thai$geometry)
+
+# Plot the neighbors
+plot(st_geometry(thai), border = 'gray')
+plot(nb, st_geometry(thai), col = 'red', add = TRUE)
+
+```
+
+On closer inspecting, one of the province in the bottom left is disconnected from the rest. It appears to be Phuket that is disconnected from the rest.
+
+```{r}
+summary(nb)
+```
+
+From the above we can see that region number 67 is without any neighbours. To retrieve the name of region 67 (index 67 in nb):
+
+```{r}
+thai$ADM1_EN[67]
+```
+
+It is confirmed that Phuket is disconnected from the rest.
+
+![Phuket Region](data\raw\Phuket_region.png){width="100%" style="object-fit: contain;"}
+Looking at the map, we can see that while **Phuket** is disconnected by water body, we can considered it to be the neighbour of **Phangnga**.
+
+```{r}
+which(unique(thai$ADM1_EN) == "Phangnga")
+```
+From the code above, we now know the number for the ***Phangnga** region and we will manually add **Phuket** to **Phangnga** and **Phangnga** to **Phuket**.
+
+Adding **Phuket** to **Phangnga**
+
+**Warning: This code is not idempotent!**
+```{r}
+nb[[66]] <- c(nb[[66]], as.integer(67))
+```
+
+Adding **Phangnga** to **Phuket**
+```{r}
+nb[[67]] <- as.integer(c(66))
+```
+
+```{r}
+summary(nb)
+```
+
+```{r}
+#nb <- st_contiguity(thai$geometry)
+```
+
+# Global Moran
+
+
 ```{r}
 wm_q2017 <- drugs_by_year[["2017"]] %>%
-  mutate(nb = st_contiguity(geometry),
+  mutate(nb = nb,
          wt = st_weights(nb,
                          style = "W"),
          .before = 1)
 ```
-## 2017 to 2022
+
 ```{r}
-#| eval: false
-for (year in 2017:2022) {
-  wm_q <- drugs_by_year[[as.character(year)]] %>%
-    mutate(nb = st_contiguity(geometry),
-           wt = st_weights(nb, style = "W"),
-           .before = 1)
-  
-  moran_results[[as.character(year)]]$weights <- wm_q
-}
+wm_q2018 <- drugs_by_year[["2018"]] %>%
+  mutate(nb = nb,
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
 ```
 
 ```{r}
-#| eval: false
-  moranI <- global_moran(moran_results[[as.character(year)]]$weights$no_cases,
-                         moran_results[[as.character(year)]]$weights$nb,
-                         moran_results[[as.character(year)]]$weights$wt)
-  
-  # Store global Moran's I results
-  moran_results[[as.character(year)]]$global_moran <- moranI
-}
+wm_q2019 <- drugs_by_year[["2019"]] %>%
+  mutate(nb = nb,
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
 ```
+
+```{r}
+wm_q2020 <- drugs_by_year[["2020"]] %>%
+  mutate(nb = nb,
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
+```
+
+```{r}
+wm_q2021 <- drugs_by_year[["2021"]] %>%
+  mutate(nb = nb,
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
+```
+
+```{r}
+wm_q2022 <- drugs_by_year[["2022"]] %>%
+  mutate(nb = nb,
+         wt = st_weights(nb,
+                         style = "W"),
+         .before = 1)
+```
+
+
+## quick glance at global moran
 
 ```{r}
 moranI2017 <- global_moran(wm_q2017$no_cases,
                        wm_q2017$nb,
                        wm_q2017$wt)
-glimpse(moranI2017)
+#glimpse(moranI2017)
+```
+
+```{r}
+moranI2018 <- global_moran(wm_q2018$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt)
+#glimpse(moranI2017)
+```
+
+```{r}
+moranI2019 <- global_moran(wm_q2019$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt)
+#glimpse(moranI2017)
+```
+
+```{r}
+moranI2020 <- global_moran(wm_q2020$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt)
+#glimpse(moranI2017)
+```
+
+```{r}
+moranI2021 <- global_moran(wm_q2021$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt)
+#glimpse(moranI2017)
+```
+
+```{r}
+moranI2022 <- global_moran(wm_q2022$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt)
+#glimpse(moranI2017)
 ```
 
 ```{r}
@@ -189,15 +329,56 @@ glimpse(moranI2017)
 set.seed(1234)
 ```
 
+
+## permutations
+
 ```{r}
 global_moran_perm(wm_q2017$no_cases,
                        wm_q2017$nb,
                        wm_q2017$wt,
                   nsim = 99)
 ```
+```{r}
+global_moran_perm(wm_q2018$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt,
+                  nsim = 99)
+```
 
 ```{r}
-lisa <- wm_q2017 %>% 
+global_moran_perm(wm_q2019$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt,
+                  nsim = 99)
+```
+
+```{r}
+global_moran_perm(wm_q2020$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt,
+                  nsim = 99)
+```
+
+```{r}
+global_moran_perm(wm_q2021$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt,
+                  nsim = 99)
+```
+
+```{r}
+global_moran_perm(wm_q2022$no_cases,
+                       wm_q2017$nb,
+                       wm_q2017$wt,
+                  nsim = 99)
+```
+
+# Local Moran
+
+Null hypothesis: The usage of drugs at one province do not depend on values at neighbouring province(s) and that the key indicators of drug abuse of Thailand are independent from space.
+
+```{r}
+lisa2017 <- wm_q2017 %>% 
   mutate(local_moran = local_moran(
     no_cases, nb, wt, nsim = 99),
          .before = 1) %>%
@@ -205,47 +386,279 @@ lisa <- wm_q2017 %>%
 ```
 
 ```{r}
+lisa2018 <- wm_q2018 %>% 
+  mutate(local_moran = local_moran(
+    no_cases, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+```
+
+```{r}
+lisa2019 <- wm_q2019 %>% 
+  mutate(local_moran = local_moran(
+    no_cases, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+```
+
+```{r}
+lisa2020 <- wm_q2020 %>% 
+  mutate(local_moran = local_moran(
+    no_cases, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+```
+
+```{r}
+lisa2021 <- wm_q2021 %>% 
+  mutate(local_moran = local_moran(
+    no_cases, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+```
+
+```{r}
+lisa2022 <- wm_q2022 %>% 
+  mutate(local_moran = local_moran(
+    no_cases, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+```
+
+In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are.
+
+```{r}
+num_greater_than_05 <- sum(abs(lisa2017$skewness) > 0.5)
+percentage <- (num_greater_than_05 / nrow(lisa2017)) * 100
+
+print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 2), "%"))
+
+```
+
+```{r}
+hist(lisa2017$skewness, 
+     freq=TRUE, 
+     breaks=20, 
+     xlab="Skewness")
+abline(v=0, 
+       col="red") 
+```
+
+Since the data is evidently skewed, we would use the median instead of the mean to visualise the data.
+
+```{r}
+hist(lisa2017$skewness, 
+     freq=TRUE, 
+     breaks=20, 
+     xlab="Skewness")
+abline(v=0, 
+       col="red") 
+```
+
+Since the data is highly skewed we will be using the median
+
+for comparison
+
+
+```{r}
 tmap_mode("plot")
-tm_shape(lisa) +
+map1 <- tm_shape(lisa2017) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
   tm_view(set.zoom.limits = c(6,8)) +
   tm_layout(main.title = "local Moran's I of No of cases",
-            main.title.size = 1.5)
+            main.title.size = 0.8)
+
+map2 <- tm_shape(lisa2017) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
 ```
 
 
 ```{r}
+tmap_mode("plot")
+map1 <- tm_shape(lisa2018) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of No of cases",
+            main.title.size = 0.8)
 
+map2 <- tm_shape(lisa2018) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
 ```
 
 ```{r}
+tmap_mode("plot")
+map1 <- tm_shape(lisa2019) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of No of cases",
+            main.title.size = 0.8)
 
+map2 <- tm_shape(lisa2019) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
 ```
 
 ```{r}
+tmap_mode("plot")
+map1 <- tm_shape(lisa2020) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of No of cases",
+            main.title.size = 0.8)
 
+map2 <- tm_shape(lisa2020) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
 ```
 
 ```{r}
+tmap_mode("plot")
+map1 <- tm_shape(lisa2021) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of No of cases",
+            main.title.size = 0.8)
 
+map2 <- tm_shape(lisa2021) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
+```
+
+
+```{r}
+tmap_mode("plot")
+map1 <- tm_shape(lisa2022) +
+  tm_fill("ii") + 
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "local Moran's I of No of cases",
+            main.title.size = 0.8)
+
+map2 <- tm_shape(lisa2022) +
+  tm_fill("p_ii",
+          breaks = c(0, 0.001, 0.01, 0.05, 1),
+              labels = c("0.001", "0.01", "0.05", "Not sig")) + 
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "p-value of local Moran's I",
+            main.title.size = 0.8)
+
+tmap_arrange(map1, map2, ncol = 2)
+```
+
+## visualising significance
+
+```{r}
+lisa2017_sig <- lisa2017 %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa2017) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa2017_sig) + 
+  tm_fill("median") +
+  tm_borders(alpha = 0.4)
 ```
 
 ```{r}
-
+lisa2018_sig <- lisa2018 %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa2018) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa2018_sig) + 
+  tm_fill("median") +
+  tm_borders(alpha = 0.4)
 ```
 
 ```{r}
-
+lisa2019_sig <- lisa2019 %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa2019) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa2019_sig) + 
+  tm_fill("median") +
+  tm_borders(alpha = 0.4)
 ```
 
 ```{r}
-
+lisa2020_sig <- lisa2020 %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa2020) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa2020_sig) + 
+  tm_fill("median") +
+  tm_borders(alpha = 0.4)
 ```
 
 ```{r}
-
+lisa2021_sig <- lisa2021 %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa2021) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa2021_sig) + 
+  tm_fill("median") +
+  tm_borders(alpha = 0.4)
 ```
+
+```{r}
+lisa2022_sig <- lisa2022 %>%
+  filter(p_ii < 0.05)
+tmap_mode("plot")
+tm_shape(lisa2022) +
+  tm_polygons() + 
+  tm_borders(alpha = 0.5) + 
+  tm_shape(lisa2022_sig) + 
+  tm_fill("median") +
+  tm_borders(alpha = 0.4)
+```
+year 2022 decriminalised drugs
+
+## Local Gi\* statistics
+
 
 ```{r}
 

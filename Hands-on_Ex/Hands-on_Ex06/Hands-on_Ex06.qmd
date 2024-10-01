@@ -77,7 +77,7 @@ hunan <- st_read(dsn = "data/geospatial",
 Next, import *Hunan_2012.csv* into R by using `read_csv()`of **readr** package. The output is R data frame class.
 
 ```{r}
-#| echo: false
+
 hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
 ```
 
@@ -148,7 +148,7 @@ rswm_q
 
 To perform Moran’s I statistics testing by using [`moran.test()`](https://r-spatial.github.io/spdep/reference/moran.test.html) of **spdep**.
 
-### **9.4.1 Maron’s I test**
+### **9.4.1 Moran’s I test**
 
 The code chunk below performs Moran’s I statistical testing using [`moran.test()`](https://r-spatial.github.io/spdep/reference/moran.test.html) of **spdep**.
 

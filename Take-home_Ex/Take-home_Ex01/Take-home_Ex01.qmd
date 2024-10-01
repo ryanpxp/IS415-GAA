@@ -402,7 +402,9 @@ osm <- st_transform(osm, crs = 32647)
 merged_myanmar <- st_union(myanmar_sf)
 osm_myanmar <- st_intersection(osm, merged_myanmar)
 ```
+
 Rds is written for future readings:
+
 ```{r}
 #| eval: false
 write_rds(osm_myanmar, "data/rds/osm_myanmar.rds")
@@ -486,7 +488,6 @@ for (quarter in names(kde_conflictmyanmar_list)) {
   plot(kde_conflictmyanmar_list[[quarter]], main = quarter)
 }
 ```
-
 
 ### 6.1.3 Quarterly spatio-temporal KDE layers
 
