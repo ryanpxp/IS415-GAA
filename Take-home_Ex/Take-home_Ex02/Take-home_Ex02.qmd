@@ -25,9 +25,9 @@ As a curious geospatial analytics green horn, you are interested to discover:
 
 -   if the key indicators of drug abuse of Thailand are independent from space.
 
--   If the indicators of drug abuse is indeed spatial dependent, then, you would like to detect where are the clusters and outliers, and the hotspots.
+-   If the indicators of drug abuse is indeed spatial dependent, then, to detect where are the clusters and outliers, and the hotspots.
 
--   Last but not least, you are also interested to investigate how the observation above evolve over time.
+-   Last but not least, to investigate how the observation above evolve over time.
 
 ## **The Task**
 
@@ -155,6 +155,7 @@ for (year in 2017:2022) {
 glimpse(drugs_by_year[["2018"]])
 ```
 
+A quick view on the distribution of drug cases in each province:
 ```{r}
 par(mfrow=c(2,2))
 par(mar = c(3,2,2,1))
@@ -172,7 +173,7 @@ for (year in 2017:2022) {
 
 ## Neighbour data
 
-As vertical, horizontal and diagonal neighbours of the province are close enough to travel to and influence each other. WE would be using Queen's neighbour criteria.
+As vertical, horizontal and diagonal neighbours of the province are close enough to travel to and influence each other. We would be using Queen's contiguity neighbour criteria.
 
 To get a quick view on the neighbours of the provinces, we can plot out the neighbours.
 
@@ -200,36 +201,43 @@ thai$ADM1_EN[67]
 
 It is confirmed that Phuket is disconnected from the rest.
 
-![Phuket Region](data\raw\Phuket_region.png){width="100%" style="object-fit: contain;"}
-Looking at the map, we can see that while **Phuket** is disconnected by water body, we can considered it to be the neighbour of **Phangnga**.
+![Phuket Region](data\raw\Phuket_region.png){width="100%" style="object-fit: contain;"} Looking at the map, we can see that while **Phuket** is disconnected by water body, we can considered it to be the neighbour of **Phangnga**.
 
 ```{r}
 which(unique(thai$ADM1_EN) == "Phangnga")
 ```
-From the code above, we now know the number for the ***Phangnga** region and we will manually add **Phuket** to **Phangnga** and **Phangnga** to **Phuket**.
+
+From the code above, we now know the number for the \***Phangnga** region (number 67) and we will manually add **Phuket** to **Phangnga** and **Phangnga** to **Phuket**.
 
 Adding **Phuket** to **Phangnga**
 
 **Warning: This code is not idempotent!**
+
 ```{r}
 nb[[66]] <- c(nb[[66]], as.integer(67))
 ```
 
 Adding **Phangnga** to **Phuket**
+
 ```{r}
 nb[[67]] <- as.integer(c(66))
 ```
 
+Ensure that all regions are connected
 ```{r}
 summary(nb)
 ```
 
+**Phuket** and **Phangnga** should now be connected when plotting the neighbour
 ```{r}
-#nb <- st_contiguity(thai$geometry)
+plot(st_geometry(thai), border = 'gray')
+plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 ```
 
 # Global Moran
 
+::: panel-tabset
+### 2017
 
 ```{r}
 wm_q2017 <- drugs_by_year[["2017"]] %>%
@@ -239,6 +247,8 @@ wm_q2017 <- drugs_by_year[["2017"]] %>%
          .before = 1)
 ```
 
+### 2018
+
 ```{r}
 wm_q2018 <- drugs_by_year[["2018"]] %>%
   mutate(nb = nb,
@@ -246,6 +256,8 @@ wm_q2018 <- drugs_by_year[["2018"]] %>%
                          style = "W"),
          .before = 1)
 ```
+
+### 2019
 
 ```{r}
 wm_q2019 <- drugs_by_year[["2019"]] %>%
@@ -255,6 +267,8 @@ wm_q2019 <- drugs_by_year[["2019"]] %>%
          .before = 1)
 ```
 
+### 2020
+
 ```{r}
 wm_q2020 <- drugs_by_year[["2020"]] %>%
   mutate(nb = nb,
@@ -262,6 +276,8 @@ wm_q2020 <- drugs_by_year[["2020"]] %>%
                          style = "W"),
          .before = 1)
 ```
+
+### 2021
 
 ```{r}
 wm_q2021 <- drugs_by_year[["2021"]] %>%
@@ -271,6 +287,8 @@ wm_q2021 <- drugs_by_year[["2021"]] %>%
          .before = 1)
 ```
 
+### 2022
+
 ```{r}
 wm_q2022 <- drugs_by_year[["2022"]] %>%
   mutate(nb = nb,
@@ -279,58 +297,79 @@ wm_q2022 <- drugs_by_year[["2022"]] %>%
          .before = 1)
 ```
 
+:::
 
 ## quick glance at global moran
+
+::: panel-tabset
+### 2017
 
 ```{r}
 moranI2017 <- global_moran(wm_q2017$no_cases,
                        wm_q2017$nb,
                        wm_q2017$wt)
-#glimpse(moranI2017)
+glimpse(moranI2017)
 ```
+
+### 2018
 
 ```{r}
 moranI2018 <- global_moran(wm_q2018$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt)
-#glimpse(moranI2017)
+                       wm_q2018$nb,
+                       wm_q2018$wt)
+glimpse(moranI2018)
 ```
+
+### 2019
 
 ```{r}
 moranI2019 <- global_moran(wm_q2019$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt)
-#glimpse(moranI2017)
+                       wm_q2019$nb,
+                       wm_q2019$wt)
+glimpse(moranI2019)
 ```
+
+### 2020
 
 ```{r}
 moranI2020 <- global_moran(wm_q2020$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt)
-#glimpse(moranI2017)
+                       wm_q2020$nb,
+                       wm_q2020$wt)
+glimpse(moranI2020)
 ```
+
+### 2021
 
 ```{r}
 moranI2021 <- global_moran(wm_q2021$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt)
-#glimpse(moranI2017)
+                       wm_q2021$nb,
+                       wm_q2021$wt)
+glimpse(moranI2021)
 ```
+
+### 2022
 
 ```{r}
 moranI2022 <- global_moran(wm_q2022$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt)
-#glimpse(moranI2017)
+                       wm_q2022$nb,
+                       wm_q2022$wt)
+glimpse(moranI2022)
 ```
 
+:::
+
+
+
+To make the data reproducible we would set the seed to a specify value
 ```{r}
 
-set.seed(1234)
+set.seed(12345)
 ```
 
-
 ## permutations
+
+::: panel-tabset
+### 2017
 
 ```{r}
 global_moran_perm(wm_q2017$no_cases,
@@ -338,44 +377,63 @@ global_moran_perm(wm_q2017$no_cases,
                        wm_q2017$wt,
                   nsim = 99)
 ```
+
+### 2018
+
 ```{r}
 global_moran_perm(wm_q2018$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt,
+                       wm_q2018$nb,
+                       wm_q2018$wt,
                   nsim = 99)
 ```
+
+### 2019
 
 ```{r}
 global_moran_perm(wm_q2019$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt,
+                       wm_q2019$nb,
+                       wm_q2019$wt,
                   nsim = 99)
 ```
+
+### 2020
 
 ```{r}
 global_moran_perm(wm_q2020$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt,
+                       wm_q2020$nb,
+                       wm_q2020$wt,
                   nsim = 99)
 ```
+
+### 2021
 
 ```{r}
 global_moran_perm(wm_q2021$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt,
+                       wm_q2021$nb,
+                       wm_q2021$wt,
                   nsim = 99)
 ```
 
+### 2022
+
 ```{r}
 global_moran_perm(wm_q2022$no_cases,
-                       wm_q2017$nb,
-                       wm_q2017$wt,
+                       wm_q2022$nb,
+                       wm_q2022$wt,
                   nsim = 99)
 ```
+
+:::
+
+## Inference
+From the global Moran's I test, we can infer that 
 
 # Local Moran
 
 Null hypothesis: The usage of drugs at one province do not depend on values at neighbouring province(s) and that the key indicators of drug abuse of Thailand are independent from space.
+
+::: panel-tabset
+### 2017
 
 ```{r}
 lisa2017 <- wm_q2017 %>% 
@@ -385,6 +443,8 @@ lisa2017 <- wm_q2017 %>%
   unnest(local_moran)
 ```
 
+### 2018
+
 ```{r}
 lisa2018 <- wm_q2018 %>% 
   mutate(local_moran = local_moran(
@@ -392,6 +452,8 @@ lisa2018 <- wm_q2018 %>%
          .before = 1) %>%
   unnest(local_moran)
 ```
+
+### 2019
 
 ```{r}
 lisa2019 <- wm_q2019 %>% 
@@ -401,6 +463,8 @@ lisa2019 <- wm_q2019 %>%
   unnest(local_moran)
 ```
 
+### 2020
+
 ```{r}
 lisa2020 <- wm_q2020 %>% 
   mutate(local_moran = local_moran(
@@ -408,6 +472,8 @@ lisa2020 <- wm_q2020 %>%
          .before = 1) %>%
   unnest(local_moran)
 ```
+
+### 2021
 
 ```{r}
 lisa2021 <- wm_q2021 %>% 
@@ -417,6 +483,8 @@ lisa2021 <- wm_q2021 %>%
   unnest(local_moran)
 ```
 
+### 2022
+
 ```{r}
 lisa2022 <- wm_q2022 %>% 
   mutate(local_moran = local_moran(
@@ -424,6 +492,9 @@ lisa2022 <- wm_q2022 %>%
          .before = 1) %>%
   unnest(local_moran)
 ```
+:::
+
+:::
 
 In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are.
 
@@ -459,6 +530,8 @@ Since the data is highly skewed we will be using the median
 
 for comparison
 
+::: panel-tabset
+### 2017
 
 ```{r}
 tmap_mode("plot")
@@ -480,6 +553,7 @@ map2 <- tm_shape(lisa2017) +
 tmap_arrange(map1, map2, ncol = 2)
 ```
 
+### 2018
 
 ```{r}
 tmap_mode("plot")
@@ -501,6 +575,8 @@ map2 <- tm_shape(lisa2018) +
 tmap_arrange(map1, map2, ncol = 2)
 ```
 
+### 2019
+
 ```{r}
 tmap_mode("plot")
 map1 <- tm_shape(lisa2019) +
@@ -520,6 +596,8 @@ map2 <- tm_shape(lisa2019) +
 
 tmap_arrange(map1, map2, ncol = 2)
 ```
+
+### 2020
 
 ```{r}
 tmap_mode("plot")
@@ -541,6 +619,8 @@ map2 <- tm_shape(lisa2020) +
 tmap_arrange(map1, map2, ncol = 2)
 ```
 
+### 2021
+
 ```{r}
 tmap_mode("plot")
 map1 <- tm_shape(lisa2021) +
@@ -561,6 +641,7 @@ map2 <- tm_shape(lisa2021) +
 tmap_arrange(map1, map2, ncol = 2)
 ```
 
+### 2022
 
 ```{r}
 tmap_mode("plot")
@@ -581,6 +662,14 @@ map2 <- tm_shape(lisa2022) +
 
 tmap_arrange(map1, map2, ncol = 2)
 ```
+
+:::
+
+
+
+
+
+
 
 ## visualising significance
 
@@ -655,166 +744,10 @@ tm_shape(lisa2022) +
   tm_fill("median") +
   tm_borders(alpha = 0.4)
 ```
+
 year 2022 decriminalised drugs
 
 ## Local Gi\* statistics
-
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
 
 ```{r}
 
