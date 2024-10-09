@@ -68,7 +68,7 @@ thai <- st_read(dsn = "data/raw/Thailand_shp",
 
 ### Study area
 
-![Breakdown of Provinces of Thailand](data\raw\Thailand_provinces_en.svg.png){width="100%" style="object-fit: contain;"}
+![Breakdown of Provinces of Thailand](img\Thailand_provinces_en.svg.png){width="100%" style="object-fit: contain;"}
 
 ```{r}
 #| echo: false
@@ -126,7 +126,7 @@ drugs <- drugs %>%
 
 ```
 
-### Checking the Output
+### Checking the output
 
 We can see that both **buogkan** and **Loburi** is now changed into **Bueng** **Kan** and **Lop** **Buri**
 
@@ -141,7 +141,33 @@ Taking a peek at the type of drug offenses,
 unique(drugs$types_of_drug_offenses)
 ```
 
-Since we will only focus on drug abuse, we would be only extracting the "drug_use_cases" from the types of drug offenses.We will also break up the data into years for visualisation.
+We will be only extracting the confirmed cases from the types of drug offenses.
+
+because
+
+
+
+
+
+
+We will also break up the data into years for visualisation.
+
+
+
+```{r}
+confirmed_drug_offenses <- c(
+  "drug_use_cases", "possession_cases", "possession_with_intent_to_distribute_cases", "trafficking_cases", "production_cases", "import_cases", "export_cases", "conspiracy_cases"
+)
+
+```
+
+
+
+
+
+
+
+
 
 ```{r}
 drugs_by_year <- list()
@@ -149,15 +175,26 @@ drugs_by_year <- list()
 for (year in 2017:2022) {
   drugs_by_year[[as.character(year)]] <- left_join(thai, drugs, by = c("ADM1_EN" = "province_en")) %>%
     dplyr::select(1:3, 17:19,21) %>%
-    filter(fiscal_year == year, types_of_drug_offenses == "drug_use_cases")
+    filter(fiscal_year == year, types_of_drug_offenses %in% confirmed_drug_offenses)
 }
 
 glimpse(drugs_by_year[["2018"]])
 ```
 
+
+
+```{r}
+unique(drugs_by_year[["2018"]]$types_of_drug_offenses)
+```
+
+
+
+
+
+
 A quick view on the distribution of drug cases in each province:
 ```{r}
-par(mfrow=c(2,2))
+par(mfrow=c(2,3))
 par(mar = c(3,2,2,1))
 for (year in 2017:2022) {
   map <- tm_shape(drugs_by_year[[as.character(year)]]) +
@@ -180,7 +217,12 @@ To get a quick view on the neighbours of the provinces, we can plot out the neig
 ```{r}
 # Calculate contiguity neighbors
 nb <- st_contiguity(thai$geometry)
+```
 
+The code has some warnings on having no neighbours.
+
+```{r}
+#| warning: false
 # Plot the neighbors
 plot(st_geometry(thai), border = 'gray')
 plot(nb, st_geometry(thai), col = 'red', add = TRUE)
@@ -188,6 +230,8 @@ plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 ```
 
 On closer inspecting, one of the province in the bottom left is disconnected from the rest. It appears to be Phuket that is disconnected from the rest.
+
+![Close-up of neighbour plot](img\Phuket_region.png){width="100%" style="object-fit: contain;"}
 
 ```{r}
 summary(nb)
@@ -201,7 +245,8 @@ thai$ADM1_EN[67]
 
 It is confirmed that Phuket is disconnected from the rest.
 
-![Phuket Region](data\raw\Phuket_region.png){width="100%" style="object-fit: contain;"} Looking at the map, we can see that while **Phuket** is disconnected by water body, we can considered it to be the neighbour of **Phangnga**.
+![Phuket Region](img\Phuket_region.png){width="100%" style="object-fit: contain;"} 
+Looking at the map, we can see that while **Phuket** is disconnected by water body, we can considered it to be the neighbour of **Phangnga**.
 
 ```{r}
 which(unique(thai$ADM1_EN) == "Phangnga")
@@ -230,6 +275,7 @@ summary(nb)
 
 **Phuket** and **Phangnga** should now be connected when plotting the neighbour
 ```{r}
+#| warning: false
 plot(st_geometry(thai), border = 'gray')
 plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 ```
@@ -241,6 +287,27 @@ plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 
 ```{r}
 wm_q2017 <- drugs_by_year[["2017"]] %>%
+  group_by(ADM1_EN) %>%  
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"),  
+         .before = 1)
+
+glimpse(wm_q2017)
+
+```
+
+
+
+
+
+
+
+
+```{r}
+#| eval: false
+wm_q2017 <- drugs_by_year[["2017"]] %>%
   mutate(nb = nb,
          wt = st_weights(nb,
                          style = "W"),
@@ -251,6 +318,20 @@ wm_q2017 <- drugs_by_year[["2017"]] %>%
 
 ```{r}
 wm_q2018 <- drugs_by_year[["2018"]] %>%
+  group_by(ADM1_EN) %>%  
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"), 
+         .before = 1)
+
+glimpse(wm_q2018)
+
+```
+
+```{r}
+#| eval: false
+wm_q2018 <- drugs_by_year[["2018"]] %>%
   mutate(nb = nb,
          wt = st_weights(nb,
                          style = "W"),
@@ -258,8 +339,21 @@ wm_q2018 <- drugs_by_year[["2018"]] %>%
 ```
 
 ### 2019
+```{r}
+wm_q2019 <- drugs_by_year[["2019"]] %>%
+  group_by(ADM1_EN) %>%  
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"),  
+         .before = 1)
+
+glimpse(wm_q2019)
+
+```
 
 ```{r}
+#| eval: false
 wm_q2019 <- drugs_by_year[["2019"]] %>%
   mutate(nb = nb,
          wt = st_weights(nb,
@@ -268,8 +362,21 @@ wm_q2019 <- drugs_by_year[["2019"]] %>%
 ```
 
 ### 2020
+```{r}
+wm_q2020 <- drugs_by_year[["2020"]] %>%
+  group_by(ADM1_EN) %>% 
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  # Summarize cases per province
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"), 
+         .before = 1)
+
+glimpse(wm_q2020)
+
+```
 
 ```{r}
+#| eval: false
 wm_q2020 <- drugs_by_year[["2020"]] %>%
   mutate(nb = nb,
          wt = st_weights(nb,
@@ -278,8 +385,21 @@ wm_q2020 <- drugs_by_year[["2020"]] %>%
 ```
 
 ### 2021
+```{r}
+wm_q2021 <- drugs_by_year[["2021"]] %>%
+  group_by(ADM1_EN) %>% 
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  # Summarize cases per province
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"), 
+         .before = 1)
+
+glimpse(wm_q2021)
+
+```
 
 ```{r}
+#| eval: false
 wm_q2021 <- drugs_by_year[["2021"]] %>%
   mutate(nb = nb,
          wt = st_weights(nb,
@@ -288,8 +408,21 @@ wm_q2021 <- drugs_by_year[["2021"]] %>%
 ```
 
 ### 2022
+```{r}
+wm_q2022 <- drugs_by_year[["2022"]] %>%
+  group_by(ADM1_EN) %>% 
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  # Summarize cases per province
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"), 
+         .before = 1)
+
+glimpse(wm_q2022)
+
+```
 
 ```{r}
+#| eval: false
 wm_q2022 <- drugs_by_year[["2022"]] %>%
   mutate(nb = nb,
          wt = st_weights(nb,
@@ -428,9 +561,24 @@ global_moran_perm(wm_q2022$no_cases,
 ## Inference
 From the global Moran's I test, we can infer that 
 
+
+
+
+
+
+
+
+
+
 # Local Moran
 
 Null hypothesis: The usage of drugs at one province do not depend on values at neighbouring province(s) and that the key indicators of drug abuse of Thailand are independent from space.
+
+
+
+
+
+
 
 ::: panel-tabset
 ### 2017
@@ -534,7 +682,6 @@ for comparison
 ### 2017
 
 ```{r}
-tmap_mode("plot")
 map1 <- tm_shape(lisa2017) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
@@ -556,7 +703,6 @@ tmap_arrange(map1, map2, ncol = 2)
 ### 2018
 
 ```{r}
-tmap_mode("plot")
 map1 <- tm_shape(lisa2018) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
@@ -578,7 +724,6 @@ tmap_arrange(map1, map2, ncol = 2)
 ### 2019
 
 ```{r}
-tmap_mode("plot")
 map1 <- tm_shape(lisa2019) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
@@ -600,7 +745,6 @@ tmap_arrange(map1, map2, ncol = 2)
 ### 2020
 
 ```{r}
-tmap_mode("plot")
 map1 <- tm_shape(lisa2020) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
@@ -622,7 +766,6 @@ tmap_arrange(map1, map2, ncol = 2)
 ### 2021
 
 ```{r}
-tmap_mode("plot")
 map1 <- tm_shape(lisa2021) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
@@ -644,7 +787,6 @@ tmap_arrange(map1, map2, ncol = 2)
 ### 2022
 
 ```{r}
-tmap_mode("plot")
 map1 <- tm_shape(lisa2022) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
@@ -664,10 +806,6 @@ tmap_arrange(map1, map2, ncol = 2)
 ```
 
 :::
-
-
-
-
 
 
 
@@ -745,7 +883,15 @@ tm_shape(lisa2022) +
   tm_borders(alpha = 0.4)
 ```
 
+
+
+
 year 2022 decriminalised drugs
+
+
+
+
+
 
 ## Local Gi\* statistics
 
@@ -785,30 +931,3 @@ year 2022 decriminalised drugs
 
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```

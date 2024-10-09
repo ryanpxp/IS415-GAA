@@ -294,7 +294,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">October 4, 2024</p>
+      <p class="date-modified">October 9, 2024</p>
     </div>
   </div>
     
@@ -370,7 +370,7 @@ Geodetic CRS:  WGS 84</code></pre>
 <h3 class="anchored" data-anchor-id="study-area">Study area</h3>
 <div class="quarto-figure quarto-figure-center" style="object-fit: contain;">
 <figure class="figure">
-<p><img src="data\raw\Thailand_provinces_en.svg.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<p><img src="img\Thailand_provinces_en.svg.png" class="img-fluid figure-img" style="width:100.0%"></p>
 <figcaption>Breakdown of Provinces of Thailand</figcaption>
 </figure>
 </div>
@@ -532,7 +532,7 @@ dbl (2): fiscal_year, no_cases
 </table>
 <p>We will have to change these province names in the aspatial data to match those in the geospatial daata.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">The code</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Checking the Output</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">The code</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Checking the output</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="cell">
@@ -613,50 +613,70 @@ dbl (2): fiscal_year, no_cases
 [16] "suspects_in_conspiracy_cases"                          </code></pre>
 </div>
 </div>
-<p>Since we will only focus on drug abuse, we would be only extracting the “drug_use_cases” from the types of drug offenses.We will also break up the data into years for visualisation.</p>
+<p>We will be only extracting the confirmed cases from the types of drug offenses.</p>
+<p>because</p>
+<p>We will also break up the data into years for visualisation.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>drugs_by_year <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2022</span>) {</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  drugs_by_year[[<span class="fu">as.character</span>(year)]] <span class="ot">&lt;-</span> <span class="fu">left_join</span>(thai, drugs, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"ADM1_EN"</span> <span class="ot">=</span> <span class="st">"province_en"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">17</span><span class="sc">:</span><span class="dv">19</span>,<span class="dv">21</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(fiscal_year <span class="sc">==</span> year, types_of_drug_offenses <span class="sc">==</span> <span class="st">"drug_use_cases"</span>)</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(drugs_by_year[[<span class="st">"2018"</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>confirmed_drug_offenses <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"drug_use_cases"</span>, <span class="st">"possession_cases"</span>, <span class="st">"possession_with_intent_to_distribute_cases"</span>, <span class="st">"trafficking_cases"</span>, <span class="st">"production_cases"</span>, <span class="st">"import_cases"</span>, <span class="st">"export_cases"</span>, <span class="st">"conspiracy_cases"</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>drugs_by_year <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2022</span>) {</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  drugs_by_year[[<span class="fu">as.character</span>(year)]] <span class="ot">&lt;-</span> <span class="fu">left_join</span>(thai, drugs, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"ADM1_EN"</span> <span class="ot">=</span> <span class="st">"province_en"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">17</span><span class="sc">:</span><span class="dv">19</span>,<span class="dv">21</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(fiscal_year <span class="sc">==</span> year, types_of_drug_offenses <span class="sc">%in%</span> confirmed_drug_offenses)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(drugs_by_year[[<span class="st">"2018"</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Rows: 77
+<pre><code>Rows: 616
 Columns: 7
-$ Shape_Leng             &lt;dbl&gt; 2.417227, 1.695100, 1.251111, 1.884945, 3.04171…
-$ Shape_Area             &lt;dbl&gt; 0.13133873, 0.07926199, 0.05323766, 0.12698345,…
-$ ADM1_EN                &lt;chr&gt; "Bangkok", "Samut Prakan", "Nonthaburi", "Pathu…
+$ Shape_Leng             &lt;dbl&gt; 2.417227, 2.417227, 2.417227, 2.417227, 2.41722…
+$ Shape_Area             &lt;dbl&gt; 0.13133873, 0.13133873, 0.13133873, 0.13133873,…
+$ ADM1_EN                &lt;chr&gt; "Bangkok", "Bangkok", "Bangkok", "Bangkok", "Ba…
 $ fiscal_year            &lt;dbl&gt; 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018,…
-$ types_of_drug_offenses &lt;chr&gt; "drug_use_cases", "drug_use_cases", "drug_use_c…
-$ no_cases               &lt;dbl&gt; 16480, 3015, 1661, 1823, 1123, 660, 1850, 402, …
+$ types_of_drug_offenses &lt;chr&gt; "drug_use_cases", "possession_cases", "possessi…
+$ no_cases               &lt;dbl&gt; 16480, 10643, 5875, 623, 180, 1, 1, 36, 3015, 3…
 $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..., MU…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(drugs_by_year[[<span class="st">"2018"</span>]]<span class="sc">$</span>types_of_drug_offenses)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "drug_use_cases"                            
+[2] "possession_cases"                          
+[3] "possession_with_intent_to_distribute_cases"
+[4] "trafficking_cases"                         
+[5] "production_cases"                          
+[6] "import_cases"                              
+[7] "export_cases"                              
+[8] "conspiracy_cases"                          </code></pre>
 </div>
 </div>
 <p>A quick view on the distribution of drug cases in each province:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>))</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2022</span>) {</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  map <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(drugs_by_year[[<span class="fu">as.character</span>(year)]]) <span class="sc">+</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_fill</span>(<span class="st">"no_cases"</span>,</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">n =</span> <span class="dv">5</span>,</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">style =</span> <span class="st">"equal"</span>) <span class="sc">+</span>  </span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="fu">paste</span>(<span class="st">"Equal interval classification - Fiscal Year"</span>, year))</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(map)</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>))</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2022</span>) {</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  map <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(drugs_by_year[[<span class="fu">as.character</span>(year)]]) <span class="sc">+</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_fill</span>(<span class="st">"no_cases"</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">n =</span> <span class="dv">5</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">style =</span> <span class="st">"equal"</span>) <span class="sc">+</span>  </span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="fu">paste</span>(<span class="st">"Equal interval classification - Fiscal Year"</span>, year))</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(map)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Some legend labels were too wide. These labels have been resized to 0.61, 0.61, 0.61, 0.56. Increase legend.width (argument of tm_layout) to make the legend wider and therefore the labels larger.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -666,7 +686,7 @@ $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -676,7 +696,7 @@ $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-11-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -686,7 +706,7 @@ $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-11-4.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-4.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -696,7 +716,7 @@ $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-11-5.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-5.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -706,7 +726,7 @@ $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-11-6.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-6.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -717,8 +737,8 @@ $ geometry               &lt;MULTIPOLYGON [°]&gt; MULTIPOLYGON (((100.6139 13..
 <p>As vertical, horizontal and diagonal neighbours of the province are close enough to travel to and influence each other. We would be using Queen’s contiguity neighbour criteria.</p>
 <p>To get a quick view on the neighbours of the provinces, we can plot out the neighbours.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate contiguity neighbors</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">st_contiguity</span>(thai<span class="sc">$</span>geometry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate contiguity neighbors</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">st_contiguity</span>(thai<span class="sc">$</span>geometry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in spdep::poly2nb(geometry, queen = queen, ...): some observations have no neighbours;
 if this seems unexpected, try increasing the snap argument.</code></pre>
@@ -727,24 +747,29 @@ if this seems unexpected, try increasing the snap argument.</code></pre>
 <pre><code>Warning in spdep::poly2nb(geometry, queen = queen, ...): neighbour object has 2 sub-graphs;
 if this sub-graph count seems unexpected, try increasing the snap argument.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the neighbors</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(thai), <span class="at">border =</span> <span class="st">'gray'</span>)</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(nb, <span class="fu">st_geometry</span>(thai), <span class="at">col =</span> <span class="st">'red'</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in st_point_on_surface.sfc(coords): st_point_on_surface may not give
-correct results for longitude/latitude data</code></pre>
 </div>
+<p>The code has some warnings on having no neighbours.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the neighbors</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(thai), <span class="at">border =</span> <span class="st">'gray'</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(nb, <span class="fu">st_geometry</span>(thai), <span class="at">col =</span> <span class="st">'red'</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>On closer inspecting, one of the province in the bottom left is disconnected from the rest. It appears to be Phuket that is disconnected from the rest.</p>
+<div class="quarto-figure quarto-figure-center" style="object-fit: contain;">
+<figure class="figure">
+<p><img src="img\Phuket_region.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption>Close-up of neighbour plot</figcaption>
+</figure>
+</div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Neighbour list object:
 Number of regions: 77 
@@ -766,15 +791,15 @@ Link number distribution:
 </div>
 <p>From the above we can see that region number 67 is without any neighbours. To retrieve the name of region 67 (index 67 in nb):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>thai<span class="sc">$</span>ADM1_EN[<span class="dv">67</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>thai<span class="sc">$</span>ADM1_EN[<span class="dv">67</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Phuket"</code></pre>
 </div>
 </div>
 <p>It is confirmed that Phuket is disconnected from the rest.</p>
-<p><img src="data\raw\Phuket_region.png" class="img-fluid" style="object-fit: contain;;width:100.0%" alt="Phuket Region"> Looking at the map, we can see that while <strong>Phuket</strong> is disconnected by water body, we can considered it to be the neighbour of <strong>Phangnga</strong>.</p>
+<p><img src="img\Phuket_region.png" class="img-fluid" style="object-fit: contain;;width:100.0%" alt="Phuket Region"> Looking at the map, we can see that while <strong>Phuket</strong> is disconnected by water body, we can considered it to be the neighbour of <strong>Phangnga</strong>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">which</span>(<span class="fu">unique</span>(thai<span class="sc">$</span>ADM1_EN) <span class="sc">==</span> <span class="st">"Phangnga"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">which</span>(<span class="fu">unique</span>(thai<span class="sc">$</span>ADM1_EN) <span class="sc">==</span> <span class="st">"Phangnga"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 66</code></pre>
 </div>
@@ -783,15 +808,15 @@ Link number distribution:
 <p>Adding <strong>Phuket</strong> to <strong>Phangnga</strong></p>
 <p><strong>Warning: This code is not idempotent!</strong></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>nb[[<span class="dv">66</span>]] <span class="ot">&lt;-</span> <span class="fu">c</span>(nb[[<span class="dv">66</span>]], <span class="fu">as.integer</span>(<span class="dv">67</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>nb[[<span class="dv">66</span>]] <span class="ot">&lt;-</span> <span class="fu">c</span>(nb[[<span class="dv">66</span>]], <span class="fu">as.integer</span>(<span class="dv">67</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Adding <strong>Phangnga</strong> to <strong>Phuket</strong></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>nb[[<span class="dv">67</span>]] <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">c</span>(<span class="dv">66</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>nb[[<span class="dv">67</span>]] <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">c</span>(<span class="dv">66</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Ensure that all regions are connected</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Neighbour list object:
 Number of regions: 77 
@@ -811,16 +836,12 @@ Link number distribution:
 </div>
 <p><strong>Phuket</strong> and <strong>Phangnga</strong> should now be connected when plotting the neighbour</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(thai), <span class="at">border =</span> <span class="st">'gray'</span>)</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(nb, <span class="fu">st_geometry</span>(thai), <span class="at">col =</span> <span class="st">'red'</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in st_point_on_surface.sfc(coords): st_point_on_surface may not give
-correct results for longitude/latitude data</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(thai), <span class="at">border =</span> <span class="st">'gray'</span>)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(nb, <span class="fu">st_geometry</span>(thai), <span class="at">col =</span> <span class="st">'red'</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -834,56 +855,176 @@ correct results for longitude/latitude data</code></pre>
 <div class="tab-content">
 <div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>wm_q2017 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2017"</span>]] <span class="sc">%&gt;%</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>wm_q2017 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2017"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ADM1_EN) <span class="sc">%&gt;%</span>  </span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">no_cases =</span> <span class="fu">sum</span>(no_cases, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span>  </span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,  </span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb, <span class="at">style =</span> <span class="st">"W"</span>),  </span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(wm_q2017)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 77
+Columns: 5
+$ nb       &lt;nb&gt; &lt;2, 3, 4, 15, 59, 60&gt;, &lt;1, 15&gt;, &lt;1, 4, 5, 59&gt;, &lt;1, 3, 5, 10, 1…
+$ wt       &lt;list&gt; &lt;0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.16…
+$ ADM1_EN  &lt;chr&gt; "Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri R…
+$ no_cases &lt;dbl&gt; 2499, 748, 28747, 2070, 2411, 4566, 729, 3134, 1952, 7438, 41…
+$ geometry &lt;GEOMETRY [°]&gt; POLYGON ((104.9598 16.28368..., POLYGON ((100.3329 1…</code></pre>
 </div>
 </div>
-<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>wm_q2018 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2018"</span>]] <span class="sc">%&gt;%</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</div>
-<div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>wm_q2019 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2019"</span>]] <span class="sc">%&gt;%</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</div>
-<div id="tabset-2-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-4-tab">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>wm_q2020 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2020"</span>]] <span class="sc">%&gt;%</span></span>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>wm_q2017 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2017"</span>]] <span class="sc">%&gt;%</span></span>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
 <span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
 <span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>wm_q2018 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2018"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ADM1_EN) <span class="sc">%&gt;%</span>  </span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">no_cases =</span> <span class="fu">sum</span>(no_cases, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span>  </span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,  </span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb, <span class="at">style =</span> <span class="st">"W"</span>), </span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(wm_q2018)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 77
+Columns: 5
+$ nb       &lt;nb&gt; &lt;2, 3, 4, 15, 59, 60&gt;, &lt;1, 15&gt;, &lt;1, 4, 5, 59&gt;, &lt;1, 3, 5, 10, 1…
+$ wt       &lt;list&gt; &lt;0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.16…
+$ ADM1_EN  &lt;chr&gt; "Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri R…
+$ no_cases &lt;dbl&gt; 2768, 1318, 33839, 2070, 4213, 4261, 1060, 5525, 2670, 9127, …
+$ geometry &lt;GEOMETRY [°]&gt; POLYGON ((104.9598 16.28368..., POLYGON ((100.3329 1…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>wm_q2018 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2018"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>wm_q2019 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2019"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ADM1_EN) <span class="sc">%&gt;%</span>  </span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">no_cases =</span> <span class="fu">sum</span>(no_cases, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span>  </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,  </span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb, <span class="at">style =</span> <span class="st">"W"</span>),  </span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(wm_q2019)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 77
+Columns: 5
+$ nb       &lt;nb&gt; &lt;2, 3, 4, 15, 59, 60&gt;, &lt;1, 15&gt;, &lt;1, 4, 5, 59&gt;, &lt;1, 3, 5, 10, 1…
+$ wt       &lt;list&gt; &lt;0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.16…
+$ ADM1_EN  &lt;chr&gt; "Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri R…
+$ no_cases &lt;dbl&gt; 3609, 1364, 30094, 2256, 6013, 4471, 1579, 7307, 2888, 10579,…
+$ geometry &lt;GEOMETRY [°]&gt; POLYGON ((104.9598 16.28368..., POLYGON ((100.3329 1…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>wm_q2019 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2019"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-2-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-4-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>wm_q2020 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2020"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ADM1_EN) <span class="sc">%&gt;%</span> </span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">no_cases =</span> <span class="fu">sum</span>(no_cases, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span>  <span class="co"># Summarize cases per province</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,  </span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb, <span class="at">style =</span> <span class="st">"W"</span>), </span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(wm_q2020)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 77
+Columns: 5
+$ nb       &lt;nb&gt; &lt;2, 3, 4, 15, 59, 60&gt;, &lt;1, 15&gt;, &lt;1, 4, 5, 59&gt;, &lt;1, 3, 5, 10, 1…
+$ wt       &lt;list&gt; &lt;0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.16…
+$ ADM1_EN  &lt;chr&gt; "Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri R…
+$ no_cases &lt;dbl&gt; 1920, 1291, 21539, 2976, 3311, 4561, 1532, 4108, 2917, 11194,…
+$ geometry &lt;GEOMETRY [°]&gt; POLYGON ((104.9598 16.28368..., POLYGON ((100.3329 1…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>wm_q2020 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2020"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
 <div id="tabset-2-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-5-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>wm_q2021 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2021"</span>]] <span class="sc">%&gt;%</span></span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>wm_q2021 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2021"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ADM1_EN) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">no_cases =</span> <span class="fu">sum</span>(no_cases, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span>  <span class="co"># Summarize cases per province</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,  </span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb, <span class="at">style =</span> <span class="st">"W"</span>), </span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(wm_q2021)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 77
+Columns: 5
+$ nb       &lt;nb&gt; &lt;2, 3, 4, 15, 59, 60&gt;, &lt;1, 15&gt;, &lt;1, 4, 5, 59&gt;, &lt;1, 3, 5, 10, 1…
+$ wt       &lt;list&gt; &lt;0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.16…
+$ ADM1_EN  &lt;chr&gt; "Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri R…
+$ no_cases &lt;dbl&gt; 4400, 1723, 18151, 4483, 7752, 6068, 1542, 7496, 3277, 14160,…
+$ geometry &lt;GEOMETRY [°]&gt; POLYGON ((104.9598 16.28368..., POLYGON ((100.3329 1…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>wm_q2021 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2021"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-2-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-6-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>wm_q2022 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2022"</span>]] <span class="sc">%&gt;%</span></span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>wm_q2022 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2022"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ADM1_EN) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">no_cases =</span> <span class="fu">sum</span>(no_cases, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span>  <span class="co"># Summarize cases per province</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,  </span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb, <span class="at">style =</span> <span class="st">"W"</span>), </span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(wm_q2022)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 77
+Columns: 5
+$ nb       &lt;nb&gt; &lt;2, 3, 4, 15, 59, 60&gt;, &lt;1, 15&gt;, &lt;1, 4, 5, 59&gt;, &lt;1, 3, 5, 10, 1…
+$ wt       &lt;list&gt; &lt;0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.16…
+$ ADM1_EN  &lt;chr&gt; "Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri R…
+$ no_cases &lt;dbl&gt; 2188, 1438, 6107, 3345, 3971, 2383, 1049, 4166, 1791, 6967, 4…
+$ geometry &lt;GEOMETRY [°]&gt; POLYGON ((104.9598 16.28368..., POLYGON ((100.3329 1…</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>wm_q2022 <span class="ot">&lt;-</span> drugs_by_year[[<span class="st">"2022"</span>]] <span class="sc">%&gt;%</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nb =</span> nb,</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">wt =</span> <span class="fu">st_weights</span>(nb,</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">style =</span> <span class="st">"W"</span>),</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -895,79 +1036,79 @@ correct results for longitude/latitude data</code></pre>
 <div class="tab-content">
 <div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>moranI2017 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2017<span class="sc">$</span>no_cases,</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>nb,</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>wt)</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2017)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>moranI2017 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2017<span class="sc">$</span>no_cases,</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>nb,</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>wt)</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2017)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 2
- $ I: num 0.0828
- $ K: num 30.5</code></pre>
+ $ I: num -0.0697
+ $ K: num 31.8</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>moranI2018 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2018<span class="sc">$</span>no_cases,</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>nb,</span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>wt)</span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2018)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>moranI2018 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2018<span class="sc">$</span>no_cases,</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>nb,</span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>wt)</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2018)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 2
- $ I: num 0.0954
- $ K: num 27</code></pre>
+ $ I: num -0.0844
+ $ K: num 30.2</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-3-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-3-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>moranI2019 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2019<span class="sc">$</span>no_cases,</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>nb,</span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>wt)</span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2019)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>moranI2019 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2019<span class="sc">$</span>no_cases,</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>nb,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>wt)</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2019)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 2
- $ I: num 0.141
- $ K: num 13.7</code></pre>
+ $ I: num -0.0905
+ $ K: num 18.4</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-3-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-4-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>moranI2020 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2020<span class="sc">$</span>no_cases,</span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>nb,</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>wt)</span>
-<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2020)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>moranI2020 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2020<span class="sc">$</span>no_cases,</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>nb,</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>wt)</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2020)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 2
- $ I: num 0.0876
- $ K: num 10.4</code></pre>
+ $ I: num -0.0473
+ $ K: num 12.2</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-3-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-5-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>moranI2021 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2021<span class="sc">$</span>no_cases,</span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>nb,</span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>wt)</span>
-<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2021)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>moranI2021 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2021<span class="sc">$</span>no_cases,</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>nb,</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>wt)</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2021)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 2
- $ I: num 0.201
- $ K: num 4.71</code></pre>
+ $ I: num -0.0199
+ $ K: num 5.54</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-3-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-6-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>moranI2022 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2022<span class="sc">$</span>no_cases,</span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>nb,</span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>wt)</span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2022)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>moranI2022 <span class="ot">&lt;-</span> <span class="fu">global_moran</span>(wm_q2022<span class="sc">$</span>no_cases,</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>nb,</span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>wt)</span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(moranI2022)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 2
- $ I: num 0.216
- $ K: num 3.88</code></pre>
+ $ I: num 0.0408
+ $ K: num 3.29</code></pre>
 </div>
 </div>
 </div>
@@ -975,7 +1116,7 @@ correct results for longitude/latitude data</code></pre>
 </div>
 <p>To make the data reproducible we would set the seed to a specify value</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="permutations" class="level2">
@@ -985,10 +1126,10 @@ correct results for longitude/latitude data</code></pre>
 <div class="tab-content">
 <div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2017<span class="sc">$</span>no_cases,</span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>nb,</span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>wt,</span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2017<span class="sc">$</span>no_cases,</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>nb,</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2017<span class="sc">$</span>wt,</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Monte-Carlo simulation of Moran I
@@ -997,17 +1138,17 @@ data:  x
 weights: listw  
 number of simulations + 1: 100 
 
-statistic = 0.08276, observed rank = 95, p-value = 0.1
+statistic = -0.069721, observed rank = 13, p-value = 0.26
 alternative hypothesis: two.sided</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2018<span class="sc">$</span>no_cases,</span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>nb,</span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>wt,</span>
-<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2018<span class="sc">$</span>no_cases,</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>nb,</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2018<span class="sc">$</span>wt,</span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Monte-Carlo simulation of Moran I
@@ -1016,17 +1157,17 @@ data:  x
 weights: listw  
 number of simulations + 1: 100 
 
-statistic = 0.095369, observed rank = 93, p-value = 0.14
+statistic = -0.084421, observed rank = 10, p-value = 0.2
 alternative hypothesis: two.sided</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-4-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-3-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2019<span class="sc">$</span>no_cases,</span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>nb,</span>
-<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>wt,</span>
-<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2019<span class="sc">$</span>no_cases,</span>
+<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>nb,</span>
+<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2019<span class="sc">$</span>wt,</span>
+<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Monte-Carlo simulation of Moran I
@@ -1035,17 +1176,17 @@ data:  x
 weights: listw  
 number of simulations + 1: 100 
 
-statistic = 0.141, observed rank = 97, p-value = 0.06
+statistic = -0.090517, observed rank = 9, p-value = 0.18
 alternative hypothesis: two.sided</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-4-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-4-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2020<span class="sc">$</span>no_cases,</span>
-<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>nb,</span>
-<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>wt,</span>
-<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2020<span class="sc">$</span>no_cases,</span>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>nb,</span>
+<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2020<span class="sc">$</span>wt,</span>
+<span id="cb79-4"><a href="#cb79-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Monte-Carlo simulation of Moran I
@@ -1054,17 +1195,17 @@ data:  x
 weights: listw  
 number of simulations + 1: 100 
 
-statistic = 0.087573, observed rank = 86, p-value = 0.28
+statistic = -0.047281, observed rank = 31, p-value = 0.62
 alternative hypothesis: two.sided</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-4-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-5-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2021<span class="sc">$</span>no_cases,</span>
-<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>nb,</span>
-<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>wt,</span>
-<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2021<span class="sc">$</span>no_cases,</span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>nb,</span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2021<span class="sc">$</span>wt,</span>
+<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Monte-Carlo simulation of Moran I
@@ -1073,17 +1214,17 @@ data:  x
 weights: listw  
 number of simulations + 1: 100 
 
-statistic = 0.201, observed rank = 99, p-value = 0.02
+statistic = -0.019865, observed rank = 54, p-value = 0.92
 alternative hypothesis: two.sided</code></pre>
 </div>
 </div>
 </div>
 <div id="tabset-4-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-6-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2022<span class="sc">$</span>no_cases,</span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>nb,</span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>wt,</span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global_moran_perm</span>(wm_q2022<span class="sc">$</span>no_cases,</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>nb,</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>                       wm_q2022<span class="sc">$</span>wt,</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nsim =</span> <span class="dv">99</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Monte-Carlo simulation of Moran I
@@ -1092,7 +1233,7 @@ data:  x
 weights: listw  
 number of simulations + 1: 100 
 
-statistic = 0.21565, observed rank = 99, p-value = 0.02
+statistic = 0.040794, observed rank = 76, p-value = 0.48
 alternative hypothesis: two.sided</code></pre>
 </div>
 </div>
@@ -1113,56 +1254,56 @@ alternative hypothesis: two.sided</code></pre>
 <div class="tab-content">
 <div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>lisa2017 <span class="ot">&lt;-</span> wm_q2017 <span class="sc">%&gt;%</span> </span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>lisa2017 <span class="ot">&lt;-</span> wm_q2017 <span class="sc">%&gt;%</span> </span>
+<span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
+<span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
+<span id="cb85-4"><a href="#cb85-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb85-5"><a href="#cb85-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>lisa2018 <span class="ot">&lt;-</span> wm_q2018 <span class="sc">%&gt;%</span> </span>
-<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
-<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
-<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>lisa2018 <span class="ot">&lt;-</span> wm_q2018 <span class="sc">%&gt;%</span> </span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
+<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb86-5"><a href="#cb86-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-5-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-3-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>lisa2019 <span class="ot">&lt;-</span> wm_q2019 <span class="sc">%&gt;%</span> </span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
-<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
-<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>lisa2019 <span class="ot">&lt;-</span> wm_q2019 <span class="sc">%&gt;%</span> </span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
+<span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-5-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-4-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>lisa2020 <span class="ot">&lt;-</span> wm_q2020 <span class="sc">%&gt;%</span> </span>
-<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
-<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
-<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>lisa2020 <span class="ot">&lt;-</span> wm_q2020 <span class="sc">%&gt;%</span> </span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb88-5"><a href="#cb88-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-5-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-5-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>lisa2021 <span class="ot">&lt;-</span> wm_q2021 <span class="sc">%&gt;%</span> </span>
-<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
-<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
-<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>lisa2021 <span class="ot">&lt;-</span> wm_q2021 <span class="sc">%&gt;%</span> </span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
+<span id="cb89-3"><a href="#cb89-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
+<span id="cb89-4"><a href="#cb89-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb89-5"><a href="#cb89-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-5-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-6-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>lisa2022 <span class="ot">&lt;-</span> wm_q2022 <span class="sc">%&gt;%</span> </span>
-<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
-<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
-<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb77-5"><a href="#cb77-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>lisa2022 <span class="ot">&lt;-</span> wm_q2022 <span class="sc">%&gt;%</span> </span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">local_moran =</span> <span class="fu">local_moran</span>(</span>
+<span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a>    no_cases, nb, wt, <span class="at">nsim =</span> <span class="dv">99</span>),</span>
+<span id="cb90-4"><a href="#cb90-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-5"><a href="#cb90-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(local_moran)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -1170,41 +1311,41 @@ alternative hypothesis: two.sided</code></pre>
 <p>:::</p>
 <p>In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>num_greater_than_05 <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">abs</span>(lisa2017<span class="sc">$</span>skewness) <span class="sc">&gt;</span> <span class="fl">0.5</span>)</span>
-<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>percentage <span class="ot">&lt;-</span> (num_greater_than_05 <span class="sc">/</span> <span class="fu">nrow</span>(lisa2017)) <span class="sc">*</span> <span class="dv">100</span></span>
-<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb78-4"><a href="#cb78-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste0</span>(<span class="st">"Percentage of rows with abs(skewness) &gt; 0.5: "</span>, <span class="fu">round</span>(percentage, <span class="dv">2</span>), <span class="st">"%"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>num_greater_than_05 <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">abs</span>(lisa2017<span class="sc">$</span>skewness) <span class="sc">&gt;</span> <span class="fl">0.5</span>)</span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a>percentage <span class="ot">&lt;-</span> (num_greater_than_05 <span class="sc">/</span> <span class="fu">nrow</span>(lisa2017)) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste0</span>(<span class="st">"Percentage of rows with abs(skewness) &gt; 0.5: "</span>, <span class="fu">round</span>(percentage, <span class="dv">2</span>), <span class="st">"%"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Percentage of rows with abs(skewness) &gt; 0.5: 100%"</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(lisa2017<span class="sc">$</span>skewness, </span>
-<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">freq=</span><span class="cn">TRUE</span>, </span>
-<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">breaks=</span><span class="dv">20</span>, </span>
-<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"Skewness"</span>)</span>
-<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v=</span><span class="dv">0</span>, </span>
-<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">col=</span><span class="st">"red"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(lisa2017<span class="sc">$</span>skewness, </span>
+<span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">freq=</span><span class="cn">TRUE</span>, </span>
+<span id="cb93-3"><a href="#cb93-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">breaks=</span><span class="dv">20</span>, </span>
+<span id="cb93-4"><a href="#cb93-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"Skewness"</span>)</span>
+<span id="cb93-5"><a href="#cb93-5" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v=</span><span class="dv">0</span>, </span>
+<span id="cb93-6"><a href="#cb93-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">col=</span><span class="st">"red"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-46-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-55-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>Since the data is evidently skewed, we would use the median instead of the mean to visualise the data.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(lisa2017<span class="sc">$</span>skewness, </span>
-<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">freq=</span><span class="cn">TRUE</span>, </span>
-<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">breaks=</span><span class="dv">20</span>, </span>
-<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"Skewness"</span>)</span>
-<span id="cb81-5"><a href="#cb81-5" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v=</span><span class="dv">0</span>, </span>
-<span id="cb81-6"><a href="#cb81-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">col=</span><span class="st">"red"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(lisa2017<span class="sc">$</span>skewness, </span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">freq=</span><span class="cn">TRUE</span>, </span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">breaks=</span><span class="dv">20</span>, </span>
+<span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"Skewness"</span>)</span>
+<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v=</span><span class="dv">0</span>, </span>
+<span id="cb94-6"><a href="#cb94-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">col=</span><span class="st">"red"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-47-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-56-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1216,33 +1357,29 @@ alternative hypothesis: two.sided</code></pre>
 <div class="tab-content">
 <div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>tmap mode set to plotting</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2017) <span class="sc">+</span></span>
-<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
-<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb84-4"><a href="#cb84-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
-<span id="cb84-5"><a href="#cb84-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
-<span id="cb84-6"><a href="#cb84-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb84-7"><a href="#cb84-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb84-8"><a href="#cb84-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2017) <span class="sc">+</span></span>
-<span id="cb84-9"><a href="#cb84-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
-<span id="cb84-10"><a href="#cb84-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
-<span id="cb84-11"><a href="#cb84-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
-<span id="cb84-12"><a href="#cb84-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb84-13"><a href="#cb84-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
-<span id="cb84-14"><a href="#cb84-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb84-15"><a href="#cb84-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb84-16"><a href="#cb84-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb95"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2017) <span class="sc">+</span></span>
+<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
+<span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb95-4"><a href="#cb95-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
+<span id="cb95-5"><a href="#cb95-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
+<span id="cb95-6"><a href="#cb95-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb95-7"><a href="#cb95-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb95-8"><a href="#cb95-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2017) <span class="sc">+</span></span>
+<span id="cb95-9"><a href="#cb95-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
+<span id="cb95-10"><a href="#cb95-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
+<span id="cb95-11"><a href="#cb95-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
+<span id="cb95-12"><a href="#cb95-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb95-13"><a href="#cb95-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
+<span id="cb95-14"><a href="#cb95-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb95-15"><a href="#cb95-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb95-16"><a href="#cb95-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Variable(s) "ii" contains positive and negative values, so midpoint is set to 0. Set midpoint = NA to show the full spectrum of the color palette.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-48-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1250,33 +1387,29 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>tmap mode set to plotting</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2018) <span class="sc">+</span></span>
-<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
-<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
-<span id="cb88-5"><a href="#cb88-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
-<span id="cb88-6"><a href="#cb88-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb88-7"><a href="#cb88-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb88-8"><a href="#cb88-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2018) <span class="sc">+</span></span>
-<span id="cb88-9"><a href="#cb88-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
-<span id="cb88-10"><a href="#cb88-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
-<span id="cb88-11"><a href="#cb88-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
-<span id="cb88-12"><a href="#cb88-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb88-13"><a href="#cb88-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
-<span id="cb88-14"><a href="#cb88-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb88-15"><a href="#cb88-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb88-16"><a href="#cb88-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2018) <span class="sc">+</span></span>
+<span id="cb97-2"><a href="#cb97-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
+<span id="cb97-3"><a href="#cb97-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb97-4"><a href="#cb97-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
+<span id="cb97-5"><a href="#cb97-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
+<span id="cb97-6"><a href="#cb97-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb97-7"><a href="#cb97-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb97-8"><a href="#cb97-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2018) <span class="sc">+</span></span>
+<span id="cb97-9"><a href="#cb97-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
+<span id="cb97-10"><a href="#cb97-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
+<span id="cb97-11"><a href="#cb97-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
+<span id="cb97-12"><a href="#cb97-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb97-13"><a href="#cb97-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
+<span id="cb97-14"><a href="#cb97-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb97-15"><a href="#cb97-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb97-16"><a href="#cb97-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Variable(s) "ii" contains positive and negative values, so midpoint is set to 0. Set midpoint = NA to show the full spectrum of the color palette.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-49-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-58-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1284,33 +1417,29 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <div id="tabset-6-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-3-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>tmap mode set to plotting</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2019) <span class="sc">+</span></span>
-<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
-<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
-<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
-<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2019) <span class="sc">+</span></span>
-<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
-<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
-<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
-<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb92-13"><a href="#cb92-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
-<span id="cb92-14"><a href="#cb92-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb92-15"><a href="#cb92-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb92-16"><a href="#cb92-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2019) <span class="sc">+</span></span>
+<span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
+<span id="cb99-3"><a href="#cb99-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb99-4"><a href="#cb99-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
+<span id="cb99-5"><a href="#cb99-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
+<span id="cb99-6"><a href="#cb99-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb99-7"><a href="#cb99-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb99-8"><a href="#cb99-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2019) <span class="sc">+</span></span>
+<span id="cb99-9"><a href="#cb99-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
+<span id="cb99-10"><a href="#cb99-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
+<span id="cb99-11"><a href="#cb99-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
+<span id="cb99-12"><a href="#cb99-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb99-13"><a href="#cb99-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
+<span id="cb99-14"><a href="#cb99-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb99-15"><a href="#cb99-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb99-16"><a href="#cb99-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Variable(s) "ii" contains positive and negative values, so midpoint is set to 0. Set midpoint = NA to show the full spectrum of the color palette.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-50-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-59-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1318,33 +1447,29 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <div id="tabset-6-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-4-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>tmap mode set to plotting</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2020) <span class="sc">+</span></span>
-<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
-<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb96-4"><a href="#cb96-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
-<span id="cb96-5"><a href="#cb96-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
-<span id="cb96-6"><a href="#cb96-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb96-7"><a href="#cb96-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb96-8"><a href="#cb96-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2020) <span class="sc">+</span></span>
-<span id="cb96-9"><a href="#cb96-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
-<span id="cb96-10"><a href="#cb96-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
-<span id="cb96-11"><a href="#cb96-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
-<span id="cb96-12"><a href="#cb96-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb96-13"><a href="#cb96-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
-<span id="cb96-14"><a href="#cb96-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb96-15"><a href="#cb96-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb96-16"><a href="#cb96-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2020) <span class="sc">+</span></span>
+<span id="cb101-2"><a href="#cb101-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
+<span id="cb101-3"><a href="#cb101-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb101-4"><a href="#cb101-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
+<span id="cb101-5"><a href="#cb101-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
+<span id="cb101-6"><a href="#cb101-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb101-7"><a href="#cb101-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-8"><a href="#cb101-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2020) <span class="sc">+</span></span>
+<span id="cb101-9"><a href="#cb101-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
+<span id="cb101-10"><a href="#cb101-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
+<span id="cb101-11"><a href="#cb101-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
+<span id="cb101-12"><a href="#cb101-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb101-13"><a href="#cb101-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
+<span id="cb101-14"><a href="#cb101-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb101-15"><a href="#cb101-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-16"><a href="#cb101-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Variable(s) "ii" contains positive and negative values, so midpoint is set to 0. Set midpoint = NA to show the full spectrum of the color palette.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-51-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-60-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1352,33 +1477,29 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <div id="tabset-6-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-5-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>tmap mode set to plotting</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2021) <span class="sc">+</span></span>
-<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
-<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
-<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
-<span id="cb100-6"><a href="#cb100-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb100-7"><a href="#cb100-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb100-8"><a href="#cb100-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2021) <span class="sc">+</span></span>
-<span id="cb100-9"><a href="#cb100-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
-<span id="cb100-10"><a href="#cb100-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
-<span id="cb100-11"><a href="#cb100-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
-<span id="cb100-12"><a href="#cb100-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb100-13"><a href="#cb100-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
-<span id="cb100-14"><a href="#cb100-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb100-15"><a href="#cb100-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb100-16"><a href="#cb100-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2021) <span class="sc">+</span></span>
+<span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
+<span id="cb103-3"><a href="#cb103-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb103-4"><a href="#cb103-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
+<span id="cb103-5"><a href="#cb103-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
+<span id="cb103-6"><a href="#cb103-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb103-7"><a href="#cb103-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb103-8"><a href="#cb103-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2021) <span class="sc">+</span></span>
+<span id="cb103-9"><a href="#cb103-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
+<span id="cb103-10"><a href="#cb103-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
+<span id="cb103-11"><a href="#cb103-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
+<span id="cb103-12"><a href="#cb103-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb103-13"><a href="#cb103-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
+<span id="cb103-14"><a href="#cb103-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb103-15"><a href="#cb103-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb103-16"><a href="#cb103-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Variable(s) "ii" contains positive and negative values, so midpoint is set to 0. Set midpoint = NA to show the full spectrum of the color palette.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-52-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-61-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1386,33 +1507,29 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <div id="tabset-6-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-6-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>tmap mode set to plotting</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2022) <span class="sc">+</span></span>
-<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
-<span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
-<span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
-<span id="cb104-6"><a href="#cb104-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2022) <span class="sc">+</span></span>
-<span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
-<span id="cb104-10"><a href="#cb104-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
-<span id="cb104-11"><a href="#cb104-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
-<span id="cb104-12"><a href="#cb104-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb104-13"><a href="#cb104-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
-<span id="cb104-14"><a href="#cb104-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
-<span id="cb104-15"><a href="#cb104-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-16"><a href="#cb104-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a>map1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2022) <span class="sc">+</span></span>
+<span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"ii"</span>) <span class="sc">+</span> </span>
+<span id="cb105-3"><a href="#cb105-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb105-4"><a href="#cb105-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_view</span>(<span class="at">set.zoom.limits =</span> <span class="fu">c</span>(<span class="dv">6</span>,<span class="dv">8</span>)) <span class="sc">+</span></span>
+<span id="cb105-5"><a href="#cb105-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"local Moran's I of No of cases"</span>,</span>
+<span id="cb105-6"><a href="#cb105-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb105-7"><a href="#cb105-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-8"><a href="#cb105-8" aria-hidden="true" tabindex="-1"></a>map2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(lisa2022) <span class="sc">+</span></span>
+<span id="cb105-9"><a href="#cb105-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"p_ii"</span>,</span>
+<span id="cb105-10"><a href="#cb105-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="dv">1</span>),</span>
+<span id="cb105-11"><a href="#cb105-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0.001"</span>, <span class="st">"0.01"</span>, <span class="st">"0.05"</span>, <span class="st">"Not sig"</span>)) <span class="sc">+</span> </span>
+<span id="cb105-12"><a href="#cb105-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb105-13"><a href="#cb105-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"p-value of local Moran's I"</span>,</span>
+<span id="cb105-14"><a href="#cb105-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">0.8</span>)</span>
+<span id="cb105-15"><a href="#cb105-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-16"><a href="#cb105-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(map1, map2, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Variable(s) "ii" contains positive and negative values, so midpoint is set to 0. Set midpoint = NA to show the full spectrum of the color palette.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-53-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-62-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1423,18 +1540,18 @@ alternative hypothesis: two.sided</code></pre>
 <section id="visualising-significance" class="level2">
 <h2 class="anchored" data-anchor-id="visualising-significance">visualising significance</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb106"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a>lisa2017_sig <span class="ot">&lt;-</span> lisa2017 <span class="sc">%&gt;%</span></span>
-<span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
-<span id="cb106-3"><a href="#cb106-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>lisa2017_sig <span class="ot">&lt;-</span> lisa2017 <span class="sc">%&gt;%</span></span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb108"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2017) <span class="sc">+</span></span>
-<span id="cb108-2"><a href="#cb108-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
-<span id="cb108-3"><a href="#cb108-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb108-4"><a href="#cb108-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2017_sig) <span class="sc">+</span> </span>
-<span id="cb108-5"><a href="#cb108-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
-<span id="cb108-6"><a href="#cb108-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2017) <span class="sc">+</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
+<span id="cb109-3"><a href="#cb109-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb109-4"><a href="#cb109-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2017_sig) <span class="sc">+</span> </span>
+<span id="cb109-5"><a href="#cb109-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
+<span id="cb109-6"><a href="#cb109-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One tm layer group has duplicated layer types, which are omitted. To
 draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -1443,24 +1560,24 @@ tm_shape prior to each of them).</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-54-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-63-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a>lisa2018_sig <span class="ot">&lt;-</span> lisa2018 <span class="sc">%&gt;%</span></span>
-<span id="cb110-2"><a href="#cb110-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
-<span id="cb110-3"><a href="#cb110-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>lisa2018_sig <span class="ot">&lt;-</span> lisa2018 <span class="sc">%&gt;%</span></span>
+<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb112"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2018) <span class="sc">+</span></span>
-<span id="cb112-2"><a href="#cb112-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
-<span id="cb112-3"><a href="#cb112-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb112-4"><a href="#cb112-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2018_sig) <span class="sc">+</span> </span>
-<span id="cb112-5"><a href="#cb112-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
-<span id="cb112-6"><a href="#cb112-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2018) <span class="sc">+</span></span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
+<span id="cb113-3"><a href="#cb113-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb113-4"><a href="#cb113-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2018_sig) <span class="sc">+</span> </span>
+<span id="cb113-5"><a href="#cb113-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
+<span id="cb113-6"><a href="#cb113-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One tm layer group has duplicated layer types, which are omitted. To
 draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -1469,24 +1586,24 @@ tm_shape prior to each of them).</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-55-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-64-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a>lisa2019_sig <span class="ot">&lt;-</span> lisa2019 <span class="sc">%&gt;%</span></span>
-<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
-<span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>lisa2019_sig <span class="ot">&lt;-</span> lisa2019 <span class="sc">%&gt;%</span></span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2019) <span class="sc">+</span></span>
-<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
-<span id="cb116-3"><a href="#cb116-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb116-4"><a href="#cb116-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2019_sig) <span class="sc">+</span> </span>
-<span id="cb116-5"><a href="#cb116-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
-<span id="cb116-6"><a href="#cb116-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2019) <span class="sc">+</span></span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
+<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb117-4"><a href="#cb117-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2019_sig) <span class="sc">+</span> </span>
+<span id="cb117-5"><a href="#cb117-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
+<span id="cb117-6"><a href="#cb117-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One tm layer group has duplicated layer types, which are omitted. To
 draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -1495,24 +1612,24 @@ tm_shape prior to each of them).</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-56-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-65-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb118"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a>lisa2020_sig <span class="ot">&lt;-</span> lisa2020 <span class="sc">%&gt;%</span></span>
-<span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
-<span id="cb118-3"><a href="#cb118-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a>lisa2020_sig <span class="ot">&lt;-</span> lisa2020 <span class="sc">%&gt;%</span></span>
+<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb119-3"><a href="#cb119-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2020) <span class="sc">+</span></span>
-<span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
-<span id="cb120-3"><a href="#cb120-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb120-4"><a href="#cb120-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2020_sig) <span class="sc">+</span> </span>
-<span id="cb120-5"><a href="#cb120-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
-<span id="cb120-6"><a href="#cb120-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb121"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2020) <span class="sc">+</span></span>
+<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
+<span id="cb121-3"><a href="#cb121-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb121-4"><a href="#cb121-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2020_sig) <span class="sc">+</span> </span>
+<span id="cb121-5"><a href="#cb121-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
+<span id="cb121-6"><a href="#cb121-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One tm layer group has duplicated layer types, which are omitted. To
 draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -1521,24 +1638,24 @@ tm_shape prior to each of them).</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-66-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>lisa2021_sig <span class="ot">&lt;-</span> lisa2021 <span class="sc">%&gt;%</span></span>
-<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
-<span id="cb122-3"><a href="#cb122-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb123"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>lisa2021_sig <span class="ot">&lt;-</span> lisa2021 <span class="sc">%&gt;%</span></span>
+<span id="cb123-2"><a href="#cb123-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb123-3"><a href="#cb123-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2021) <span class="sc">+</span></span>
-<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
-<span id="cb124-3"><a href="#cb124-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb124-4"><a href="#cb124-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2021_sig) <span class="sc">+</span> </span>
-<span id="cb124-5"><a href="#cb124-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
-<span id="cb124-6"><a href="#cb124-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb125"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2021) <span class="sc">+</span></span>
+<span id="cb125-2"><a href="#cb125-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
+<span id="cb125-3"><a href="#cb125-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb125-4"><a href="#cb125-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2021_sig) <span class="sc">+</span> </span>
+<span id="cb125-5"><a href="#cb125-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
+<span id="cb125-6"><a href="#cb125-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One tm layer group has duplicated layer types, which are omitted. To
 draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -1547,24 +1664,24 @@ tm_shape prior to each of them).</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-58-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-67-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>lisa2022_sig <span class="ot">&lt;-</span> lisa2022 <span class="sc">%&gt;%</span></span>
-<span id="cb126-2"><a href="#cb126-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
-<span id="cb126-3"><a href="#cb126-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb127"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>lisa2022_sig <span class="ot">&lt;-</span> lisa2022 <span class="sc">%&gt;%</span></span>
+<span id="cb127-2"><a href="#cb127-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(p_ii <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb127-3"><a href="#cb127-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2022) <span class="sc">+</span></span>
-<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
-<span id="cb128-3"><a href="#cb128-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb128-4"><a href="#cb128-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2022_sig) <span class="sc">+</span> </span>
-<span id="cb128-5"><a href="#cb128-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
-<span id="cb128-6"><a href="#cb128-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb129"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(lisa2022) <span class="sc">+</span></span>
+<span id="cb129-2"><a href="#cb129-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span> </span>
+<span id="cb129-3"><a href="#cb129-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb129-4"><a href="#cb129-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(lisa2022_sig) <span class="sc">+</span> </span>
+<span id="cb129-5"><a href="#cb129-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"median"</span>) <span class="sc">+</span></span>
+<span id="cb129-6"><a href="#cb129-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One tm layer group has duplicated layer types, which are omitted. To
 draw multiple layers of the same type, use multiple layer groups (i.e. specify
@@ -1573,7 +1690,7 @@ tm_shape prior to each of them).</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-59-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-68-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
