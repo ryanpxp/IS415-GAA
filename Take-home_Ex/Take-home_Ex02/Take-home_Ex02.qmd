@@ -162,11 +162,11 @@ confirmed_drug_offenses <- c(
 ```
 
 
-
-
-
-
-
+```{r}
+overall_drugs <- left_join(thai, drugs, by = c("ADM1_EN" = "province_en")) %>%
+  dplyr::select(1:3, 17:19,21) %>%
+  filter(types_of_drug_offenses %in% confirmed_drug_offenses)
+```
 
 
 ```{r}
@@ -184,7 +184,7 @@ glimpse(drugs_by_year[["2018"]])
 
 
 ```{r}
-unique(drugs_by_year[["2018"]]$types_of_drug_offenses)
+unique(drugs$types_of_drug_offenses)
 ```
 
 
@@ -194,6 +194,7 @@ unique(drugs_by_year[["2018"]]$types_of_drug_offenses)
 
 A quick view on the distribution of drug cases in each province:
 ```{r}
+#| eval: false
 par(mfrow=c(2,3))
 par(mar = c(3,2,2,1))
 for (year in 2017:2022) {
@@ -207,6 +208,37 @@ for (year in 2017:2022) {
   print(map)
 }
 ```
+```{r}
+#| eval: false
+par(mfrow=c(2,3))
+par(mar = c(3,2,2,1))
+
+# Loop through each year from 2017 to 2022
+for (year in 2017:2022) {
+  
+  # Summarize the data for each year by province (one row per province)
+  drugs_summarized <- drugs_by_year[[as.character(year)]] %>%
+    group_by(ADM1_EN) %>%
+    summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%
+    ungroup()
+  
+  # Perform the left join with the summarized data
+  map_data <- left_join(thai, drugs_summarized, by = c("ADM1_EN"))
+  
+  # Create the map
+  map <- tm_shape(map_data) +
+    tm_fill("no_cases",
+            n = 5,
+            style = "equal") +  
+    tm_borders(alpha = 0.5) +
+    tm_layout(main.title = paste("Equal interval classification - Fiscal Year", year))
+  
+  # Print the map
+  print(map)
+}
+
+```
+
 
 ## Neighbour data
 
@@ -231,7 +263,7 @@ plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 
 On closer inspecting, one of the province in the bottom left is disconnected from the rest. It appears to be Phuket that is disconnected from the rest.
 
-![Close-up of neighbour plot](img\Phuket_region.png){width="100%" style="object-fit: contain;"}
+![Close-up of neighbour plot](img\Neighbour_phuket_plot.png){width="100%" style="object-fit: contain;"}
 
 ```{r}
 summary(nb)
@@ -282,6 +314,18 @@ plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 
 # Global Moran
 
+```{r}
+wm_q_overall <- overall_drugs %>%
+  group_by(ADM1_EN) %>%  
+  summarise(no_cases = sum(no_cases, na.rm = TRUE)) %>%  
+  ungroup() %>%
+  mutate(nb = nb,  
+         wt = st_weights(nb, style = "W"),  
+         .before = 1)
+
+glimpse(wm_q_overall)
+```
+
 ::: panel-tabset
 ### 2017
 
@@ -299,21 +343,6 @@ glimpse(wm_q2017)
 ```
 
 
-
-
-
-
-
-
-```{r}
-#| eval: false
-wm_q2017 <- drugs_by_year[["2017"]] %>%
-  mutate(nb = nb,
-         wt = st_weights(nb,
-                         style = "W"),
-         .before = 1)
-```
-
 ### 2018
 
 ```{r}
@@ -327,15 +356,6 @@ wm_q2018 <- drugs_by_year[["2018"]] %>%
 
 glimpse(wm_q2018)
 
-```
-
-```{r}
-#| eval: false
-wm_q2018 <- drugs_by_year[["2018"]] %>%
-  mutate(nb = nb,
-         wt = st_weights(nb,
-                         style = "W"),
-         .before = 1)
 ```
 
 ### 2019
@@ -352,14 +372,6 @@ glimpse(wm_q2019)
 
 ```
 
-```{r}
-#| eval: false
-wm_q2019 <- drugs_by_year[["2019"]] %>%
-  mutate(nb = nb,
-         wt = st_weights(nb,
-                         style = "W"),
-         .before = 1)
-```
 
 ### 2020
 ```{r}
@@ -375,14 +387,6 @@ glimpse(wm_q2020)
 
 ```
 
-```{r}
-#| eval: false
-wm_q2020 <- drugs_by_year[["2020"]] %>%
-  mutate(nb = nb,
-         wt = st_weights(nb,
-                         style = "W"),
-         .before = 1)
-```
 
 ### 2021
 ```{r}
@@ -398,14 +402,6 @@ glimpse(wm_q2021)
 
 ```
 
-```{r}
-#| eval: false
-wm_q2021 <- drugs_by_year[["2021"]] %>%
-  mutate(nb = nb,
-         wt = st_weights(nb,
-                         style = "W"),
-         .before = 1)
-```
 
 ### 2022
 ```{r}
@@ -421,14 +417,6 @@ glimpse(wm_q2022)
 
 ```
 
-```{r}
-#| eval: false
-wm_q2022 <- drugs_by_year[["2022"]] %>%
-  mutate(nb = nb,
-         wt = st_weights(nb,
-                         style = "W"),
-         .before = 1)
-```
 
 :::
 
