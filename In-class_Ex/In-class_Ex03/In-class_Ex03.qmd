@@ -39,6 +39,7 @@ mpsz_sf <- st_read(dsn = "data",
 ```{r}
 #sg_sf
 ```
+
 ```{r}
 #| eval: false
 #par(bg = '#')
@@ -52,6 +53,7 @@ mpsz_sf <- st_read(dsn = "data",
 ```
 
 take-home exercise 1
+
 ```{r}
 #acled <- read_csv("data/Myanmar/ACLED_Myanmar.csv") %>%
 #  st_as_sf(coords = c(
