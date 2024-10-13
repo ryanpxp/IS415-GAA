@@ -22,6 +22,9 @@ hunan <- st_read(dsn = "data/geospatial",
 ```{r}
 hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
 ```
+```{r}
+class(hunan)
+```
 
 ```{r}
 hunan <- left_join(hunan,hunan2012) %>%
@@ -170,7 +173,7 @@ tm_shape(lisa) +
 
 two Gi statistic one with asterik \* and one without, asterisk will include self weight her use some formula
 
-dont need to care aboutinclude or exclude self here since it does everything but next step will decide to include or not
+dont need to care about include or exclude self here since it does everything but next step will decide to include or not
 
 ```{r}
 wm_idw <- hunan %>%

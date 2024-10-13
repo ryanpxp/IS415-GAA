@@ -1,5 +1,5 @@
 ---
-title: "Take-home Exercise 02"
+title: "Take-home Exercise 02: Application of Geospatial Analysis Methods to Discover Thailand Drug Abuse at the Province Level"
 author: "Ryan Peh"
 date: "September 25, 2024"
 date-modified: "last-modified"
@@ -9,9 +9,7 @@ execute:
   freeze: true
 ---
 
-# **Take-home Exercise 2: Application of Geospatial Analysis Methods to Discover Thailand Drug Abuse at the Province Level**
-
-## Background
+# Background
 
 Drug abuse is associated with significant negative health, financial and social consequences. Yet, illicit drug consumption remains highly prevalent and continues to be a growing problem worldwide. In 2021, 1 in 17 people aged 15–64 in the world had used a drug in the past 12 months. Notwithstanding population growth, the estimated number of drug users grew from 240 million in 2011 to 296 million in 2021.
 
@@ -19,7 +17,7 @@ The geopolitics of Thailand which is near the [Golden Triangle](https://en.wikip
 
 In Thailand, drug abuse is one of the major social issue. There are about 2.7 million youths using drugs in Thailand. Among youths aged between 15 and 19 years, there are about 300,000 who have needs for drug treatment. Most of Thai youths involved with drugs are vocational-school students, which nearly doubles in number compared to secondary-school students.
 
-## **Objectives**
+# **Objectives**
 
 As a curious geospatial analytics green horn, you are interested to discover:
 
@@ -29,7 +27,7 @@ As a curious geospatial analytics green horn, you are interested to discover:
 
 -   Last but not least, to investigate how the observation above evolve over time.
 
-## **The Task**
+# **The Task**
 
 The specific tasks of this take-home exercise are as follows:
 
@@ -45,7 +43,7 @@ The specific tasks of this take-home exercise are as follows:
 
 -   Describe the spatial patterns revealed by the analysis above.
 
-## **The Data**
+# **The Data**
 
 For the purpose of this take-home exercise, two data sets shall be used, they are:
 
@@ -53,19 +51,19 @@ For the purpose of this take-home exercise, two data sets shall be used, they ar
 
 -   [Thailand - Subnational Administrative Boundaries](https://data.humdata.org/dataset/cod-ab-tha?) at HDX. You are required to use the province boundary data set.
 
-## Importing Package
+# Importing Package
 
-### **Dependencies**
+## **Dependencies**
 
 Loading the required packages
 
-1.  **sf** Needed to handle spatial data through the new simple features standard
+1.  **sf :** Needed to handle spatial data through the new simple features standard
 
-2.  **tmap** Create thematic maps, particularly chloropleth maps in our case
+2.  **tmap :** Create thematic maps, particularly chloropleth maps in our case
 
-3.  **tidyverse** For easy data manipulation and some visualisation
+3.  **tidyverse :** For easy data manipulation and some visualisation
 
-4.  **sfdep** Spatial dependence with spatial features, the highlight of this take home exercise. The spacetime object is particularly useful
+4.  **sfdep :** Spatial dependence with spatial features, the highlight of this take home exercise. The spacetime object is particularly useful
 
 5.  **ggplot2** : For creating advanced visualisations, graphics and maps using the Grammar of Graphics.
 
@@ -73,7 +71,7 @@ Loading the required packages
 pacman::p_load(sf, sfdep, tmap, tidyverse, ggplot2)
 ```
 
-### Geospatial data
+## Geospatial data
 
 `st_read()` of **sf** package will be used to import Thailand shapefile into R environment in order to get the polygons representing the borders of the provinces in Thailand.
 
@@ -94,9 +92,9 @@ tm_shape(thai) +
   tm_layout(legend.show = FALSE)
 ```
 
-### Aspatial Data
+## Aspatial data
 
-`read_csv()` of **sf** package will be used to import the csv file into R environment. The output is R dataframe class.
+`read_csv()` of **sf** package will be used to import the drug offences in the from of csv file into R environment. The output is R dataframe class.
 
 ```{r}
 drugs <- read_csv("data/raw/thai_drug_offenses_2017_2022.csv")
@@ -119,10 +117,10 @@ print(comparison_df)
 
 The identified mismatches are:
 
-| Geospatial | Aspatial |
-|------------|----------|
-| Bueng Kan  | buogkan  |
-| Lop Buri   | Loburi   |
+| Geospatial         | Aspatial         |
+|--------------------|------------------|
+| Bueng Kan (Line 4) | buogkan (Line 4) |
+| Lop Buri (Line 22) | Loburi (Line 21) |
 
 We will have to change these province names in the aspatial data to match those in the geospatial daata.
 
@@ -146,19 +144,21 @@ print(sort(unique(drugs$province_en)))
 ```
 :::
 
+## Exclusion of suspected drug offences
+
 Taking a peek at the type of drug offenses:
 
 ```{r}
 unique(drugs$types_of_drug_offenses)
 ```
 
-From the above output, the types of offences included in the aspatial data includes suspected crimes.
+From the above output, the types of offences in the aspatial data includes suspected crimes.
 
-While including suspected crimes have its advantages such as insights to emerging crime hotspots. However, these are the reasons to exclude suspected cases:
+While including suspected crimes have its advantages such as insights to emerging crime hotspots. However, the following are the reasons I have decided to exclude suspected cases:
 
-Accuracy and Precision: Suspected cases may not be confirmed as actual crimes, so including them could overestimate crime rates and lead to misleading conclusions. This can distort the spatial patterns and cause unnecessary alarm in areas where crimes were not ultimately verified.
+**Accuracy and Precision**: Suspected cases may not be confirmed as actual crimes, so including them could overestimate crime rates and lead to misleading conclusions. This can distort the spatial patterns and cause unnecessary alarm in areas where crimes were not ultimately verified.
 
-Data Quality and Reliability: Suspected cases might introduce bias due to inconsistencies in how they are reported or defined across regions. For robust analysis, it's often better to focus on confirmed cases to ensure the data's reliability and comparability.
+**Data Quality and Reliability**: Suspected cases might introduce bias due to inconsistencies in how they are reported or defined across regions. For robust analysis, it's often better to focus on confirmed cases to ensure the data's reliability and comparability.
 
 Therefore, we will be extracting only the confirmed cases from the types of drug offenses in the aspatial data for analysis.
 
@@ -183,7 +183,7 @@ for (year in 2017:2022) {
 
 ```
 
-To speed up the process of loading the dataset in the future, we save the process data.
+To speed up the process of loading the dataset in the future, we save the processed data.
 
 ```{r}
 #| eval: false
@@ -206,9 +206,13 @@ We can see that the suspected cases are now removed from the aspatial data.
 
 ### Study area
 
+This is a geographical map of Thailand's Provinces retrieved from Wikipedia.
+
 ![Breakdown of Provinces of Thailand](img\Thailand_provinces_en.svg.png){width="100%" style="object-fit: contain;"}
 
-Looking at the above geographical map, we can see that vertical, horizontal and diagonal neighbours of the province are close enough to travel to and influence each other. Hence, we would be using Queen's contiguity neighbour criteria.
+Looking at the above geographical map, we can see that vertical, horizontal and diagonal neighbours of the province are close enough to travel to and influence each other. Hence, we would be using **Queen's contiguity** neighbour criteria.
+
+### Disconnection of neighbours
 
 To get a quick view on the neighbours of the provinces, we can plot out the neighbours.
 
@@ -236,7 +240,7 @@ On closer inspecting, one of the province in the bottom left is disconnected fro
 summary(nb)
 ```
 
-From the above we can see that region number 67 is without any neighbours. To retrieve the name of region 67 (index 67 in nb):
+From the above we can see that region number 67 is without any neighbours. To retrieve the name of region 67 (index 67 in `nb`):
 
 ```{r}
 thai$ADM1_EN[67]
@@ -254,7 +258,9 @@ From the code above, we now know the number for the **Phangnga** region (number 
 
 Adding **Phuket** to **Phangnga**
 
-**Warning: This code is not idempotent!**
+::: callout-warning
+## This code is not idempotent!
+:::
 
 ```{r}
 nb[[66]] <- c(nb[[66]], as.integer(67))
@@ -282,17 +288,17 @@ plot(nb, st_geometry(thai), col = 'red', add = TRUE)
 
 ## Setting of seed
 
-Lastly, in order to make the data reproducible we would set the seed to a specify value
+Lastly, in order to make the data reproducible we would set the seed to a specify value.
 
 ```{r}
 set.seed(12345)
 ```
 
-# Global Moran
+# Global Moran's I Test
 
 In order to evaluate spatial autocorrelation in our dataset, or to determine whether drug cases tend to cluster within specific provinces, we run Global Moran's Test.
 
-We have to first add the neighbours and the weights of the neighbours as a column to the dataset.
+We have to first add the neighbours and the weights of the neighbours as columns to the dataset.
 
 ::: panel-tabset
 ### 2017
@@ -459,7 +465,7 @@ wm_q2022 <- read_rds("data/rds/wm_q2022.rds")
 
 The assumptions of the test are sensitive to the structure of the neighbor relationship graph and other factors. To validate the results, we will run Global Moran's I tests.
 
-To get a sensing of the dataset, we can run the code chunks below first.
+To get a sensing of possible spatial correlation between provinces, we can run the code chunks below first.
 
 ::: panel-tabset
 ### 2017
@@ -517,11 +523,11 @@ glimpse(moranI2022)
 ```
 :::
 
-From the quick glance, the results are leaning towards no signs of clustering. We should run permutations of the Global Moran's I to get a reliable result.
+From the quick glance, the results are leaning towards no signs of clustering. We should run permutations of the Global Moran's I to investigate further.
 
 ## Permutations of Global Moran's I
 
-We will use [`global_moran_perm()`](https://rdrr.io/github/JosiahParry/sfdep/man/global_moran_perm.html) function from **sfdep** package with `nsim = 99`
+We will use [`global_moran_perm()`](https://rdrr.io/github/JosiahParry/sfdep/man/global_moran_perm.html) function from **sfdep** package with `nsim = 99`.
 
 ::: panel-tabset
 ### 2017
@@ -591,7 +597,7 @@ Overall, the results suggest that the distribution of dengue cases in these year
 
 # Local Moran's I test
 
-Despite the results from the global Moran's I test not showing significant spatial autocorrelation, it may still be worth performing **local Moran's I** for a more detailed, localized analysis.
+Despite the results from the global Moran's I test not showing significant spatial autocorrelation, it may still be worth performing **local Moran's I**/Local Indicators of Spatial Associationc(LISA) for a more detailed, localized analysis.
 
 Even when global Moran's I suggests no overall spatial autocorrelation, local Moran's I can reveal clusters or outliers at a finer scale. Some areas might still exhibit significant clustering or spatial dependence, which the global test may not detect. For example, there could be pockets of high or low incidence that are spatially clustered even if the overall pattern is random.
 
@@ -661,8 +667,9 @@ lisa2022 <- wm_q2022 %>%
 
 ## Skewness of the LISA
 
-In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are. ::: panel-tabset
+In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are.
 
+::: panel-tabset
 ### 2017
 
 ```{r}
@@ -674,16 +681,17 @@ print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 
 ```
 
 ```{r}
+
 ggplot(lisa2017, aes(x = skewness)) +
   geom_histogram(bins = 20, fill = "coral", color = "black") +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Distribution of Skewness",
        x = "Skewness",
        y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, size = 14))
-```
 
+```
 
 ### 2018
 
@@ -698,14 +706,13 @@ print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 
 ```{r}
 ggplot(lisa2018, aes(x = skewness)) +
   geom_histogram(bins = 20, fill = "coral", color = "black") +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Distribution of Skewness",
        x = "Skewness",
        y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, size = 14))
 ```
-
 
 ### 2019
 
@@ -720,14 +727,13 @@ print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 
 ```{r}
 ggplot(lisa2019, aes(x = skewness)) +
   geom_histogram(bins = 20, fill = "coral", color = "black") +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Distribution of Skewness",
        x = "Skewness",
        y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, size = 14))
 ```
-
 
 ### 2020
 
@@ -742,14 +748,13 @@ print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 
 ```{r}
 ggplot(lisa2020, aes(x = skewness)) +
   geom_histogram(bins = 20, fill = "coral", color = "black") +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Distribution of Skewness",
        x = "Skewness",
        y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, size = 14)) 
 ```
-
 
 ### 2021
 
@@ -763,14 +768,13 @@ print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 
 ```{r}
 ggplot(lisa2021, aes(x = skewness)) +
   geom_histogram(bins = 20, fill = "coral", color = "black") +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Distribution of Skewness",
        x = "Skewness",
        y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, size = 14))
 ```
-
 
 ### 2022
 
@@ -785,14 +789,13 @@ print(paste0("Percentage of rows with abs(skewness) > 0.5: ", round(percentage, 
 ```{r}
 ggplot(lisa2022, aes(x = skewness)) +
   geom_histogram(bins = 20, fill = "coral", color = "black") +
-  geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Distribution of Skewness",
        x = "Skewness",
        y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, size = 14))
 ```
-
 :::
 
 Since the data is evidently skewed for all the years, we would use the median instead of the mean to visualise the data.
@@ -809,7 +812,7 @@ map1 <- tm_shape(lisa2017) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
   tm_view(set.zoom.limits = c(6,8)) +
-  tm_layout(main.title = "local Moran's I of No of cases",
+  tm_layout(main.title = "Local Moran's I of No of cases",
             main.title.size = 0.8)
 
 map2 <- tm_shape(lisa2017) +
@@ -853,7 +856,7 @@ map1 <- tm_shape(lisa2019) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
   tm_view(set.zoom.limits = c(6,8)) +
-  tm_layout(main.title = "local Moran's I of No of cases",
+  tm_layout(main.title = "Local Moran's I of No of cases",
             main.title.size = 0.8)
 
 map2 <- tm_shape(lisa2019) +
@@ -875,7 +878,7 @@ map1 <- tm_shape(lisa2020) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
   tm_view(set.zoom.limits = c(6,8)) +
-  tm_layout(main.title = "local Moran's I of No of cases",
+  tm_layout(main.title = "Local Moran's I of No of cases",
             main.title.size = 0.8)
 
 map2 <- tm_shape(lisa2020) +
@@ -897,7 +900,7 @@ map1 <- tm_shape(lisa2021) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
   tm_view(set.zoom.limits = c(6,8)) +
-  tm_layout(main.title = "local Moran's I of No of cases",
+  tm_layout(main.title = "Local Moran's I of No of cases",
             main.title.size = 0.8)
 
 map2 <- tm_shape(lisa2021) +
@@ -919,7 +922,7 @@ map1 <- tm_shape(lisa2022) +
   tm_fill("ii") + 
   tm_borders(alpha = 0.5) +
   tm_view(set.zoom.limits = c(6,8)) +
-  tm_layout(main.title = "local Moran's I of No of cases",
+  tm_layout(main.title = "Local Moran's I of No of cases",
             main.title.size = 0.8)
 
 map2 <- tm_shape(lisa2022) +
@@ -940,6 +943,8 @@ tmap_arrange(map1, map2, ncol = 2)
 In order to better provide a comprehensive view of spatial autocorrelation, we will specifically be focusing on statistically significant areas only.
 
 ```{r}
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 lisa2017_sig <- lisa2017 %>% filter(p_ii < 0.05)
 lisa2018_sig <- lisa2018 %>% filter(p_ii < 0.05)
@@ -955,7 +960,7 @@ map_2017 <- tm_shape(lisa2017) +
   tm_shape(lisa2017_sig) + 
   tm_fill("median", title = "Clusters") +
   tm_borders(alpha = 0.4) +
-  tm_layout(main.title = "Local Moran's I (2017)", main.title.size = 1)
+  tm_layout(main.title = "LISA Significant(2017)", main.title.size = 1)
 
 map_2018 <- tm_shape(lisa2018) +
   tm_polygons() + 
@@ -963,7 +968,7 @@ map_2018 <- tm_shape(lisa2018) +
   tm_shape(lisa2018_sig) + 
   tm_fill("median", title = "Clusters") +
   tm_borders(alpha = 0.4) +
-  tm_layout(main.title = "Local Moran's I (2018)", main.title.size = 1)
+  tm_layout(main.title = "LISA Significant(2018)", main.title.size = 1)
 
 map_2019 <- tm_shape(lisa2019) +
   tm_polygons() + 
@@ -971,7 +976,7 @@ map_2019 <- tm_shape(lisa2019) +
   tm_shape(lisa2019_sig) + 
   tm_fill("median", title = "Clusters") +
   tm_borders(alpha = 0.4) +
-  tm_layout(main.title = "Local Moran's I (2019)", main.title.size = 1)
+  tm_layout(main.title = "LISA Significant(2019)", main.title.size = 1)
 
 map_2020 <- tm_shape(lisa2020) +
   tm_polygons() + 
@@ -979,7 +984,7 @@ map_2020 <- tm_shape(lisa2020) +
   tm_shape(lisa2020_sig) + 
   tm_fill("median", title = "Clusters") +
   tm_borders(alpha = 0.4) +
-  tm_layout(main.title = "Local Moran's I (2020)", main.title.size = 1)
+  tm_layout(main.title = "LISA Significant(2020)", main.title.size = 1)
 
 map_2021 <- tm_shape(lisa2021) +
   tm_polygons() + 
@@ -987,7 +992,7 @@ map_2021 <- tm_shape(lisa2021) +
   tm_shape(lisa2021_sig) + 
   tm_fill("median", title = "Clusters") +
   tm_borders(alpha = 0.4) +
-  tm_layout(main.title = "Local Moran's I (2021)", main.title.size = 1)
+  tm_layout(main.title = "LISA Significant(2021)", main.title.size = 1)
 
 map_2022 <- tm_shape(lisa2022) +
   tm_polygons() + 
@@ -995,31 +1000,24 @@ map_2022 <- tm_shape(lisa2022) +
   tm_shape(lisa2022_sig) + 
   tm_fill("median", title = "Clusters") +
   tm_borders(alpha = 0.4) +
-  tm_layout(main.title = "Local Moran's I (2022)", main.title.size = 1)
+  tm_layout(main.title = "LISA Significant(2022)", main.title.size = 1)
 
 tmap_mode("plot")
 tmap_arrange(map_2017, map_2018, map_2019, map_2020, map_2021, map_2022, ncol = 3)
 ```
-## Conclusion
+
+## Inference
 
 Based on the Local Moran's I maps of Thailand from 2017 to 2022 above, the key conclusions that can be drawn are:
 
-1. A persistent High-High cluster appears in the northeastern region in most years(2017, 2018, 2021, 2022), suggesting a consistent hotspot.This might suggests an entrenched drug problem in this region. Other areas show more variability, shifting between different cluster types across years.
+1.  A persistent High-High cluster appears in the northeastern region in most years (2017, 2018, 2021, 2022), suggesting a consistent hotspot.This might suggests an entrenched drug problem in this region. Other areas show more variability, shifting between different cluster types across years.
 
-2. There's limited evidence of Low-Low clusters throughout the period which might suggest that low drug related crimes in one province do not influence drug related crimes in its neighbouring province.
+2.  There's limited evidence of Low-Low clusters throughout the period which might suggest that low drug related crimes in one province do not influence drug related crimes in its neighbouring province.
 
-These observations highlights the complex and evolving nature of drug-related crimes in Thailand, suggesting the need for adaptive and regionally-targeted law enforcement and prevention strategies.
+# Conclusion
 
+The results suggest that while certain areas (like the northeastern region) show persistent outliers of drug abuse, the overall spatial pattern of random and varies over time.
 
+This calls for adaptive and regionally-targeted law enforcement strategies to address the localized nature of drug problems, particularly in persistent hotspot areas.
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
+Simultaneously, broader preventive measures may be necessary to address fluctuating crime patterns in other regions.

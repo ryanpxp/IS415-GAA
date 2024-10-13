@@ -34,19 +34,20 @@ hunan <- left_join(hunan,hunan2012)%>%
 ```
 
 tibbl form that will be saved in rds format so that won't need to keep loading large dataset and join them
+
 ```{r}
 #| eval: false
 write_rds(hunan, "data/rds/hunan.rds")
 ```
 
-after writing we read by using read_rds
-"#| echo: false to hide the code chunk"
+after writing we read by using read_rds "#\| echo: false to hide the code chunk"
+
 ```{r}
 hunan_sf <- read_rds("data/rds/hunan.rds")
 ```
 
-convert to spatial polygon data frame
-doc mentioned gwmodel needs sp so sf needs to be converted to sp since gwmodel is built around older sp model
+convert to spatial polygon data frame doc mentioned gwmodel needs sp so sf needs to be converted to sp since gwmodel is built around older sp model
+
 ```{r}
 hunan_sp <- hunan_sf %>%
   as_Spatial()
@@ -58,10 +59,12 @@ hunan_sp <- hunan_sf %>%
 
 aic machine learning model, aic reiterate and how it converge, another one is cross validation
 
-                 approach = "CV" to use cross validation
+```         
+             approach = "CV" to use cross validation
+```
 
-GDPPC assume is a function of one
-grid circle is in km need to convert to in metres
+GDPPC assume is a function of one grid circle is in km need to convert to in metres
+
 ```{r}
 bw_AIC <- bw.gwr(GDPPC ~ 1,
                  data = hunan_sp,
@@ -74,9 +77,11 @@ bw_AIC <- bw.gwr(GDPPC ~ 1,
 ```{r}
 bw_AIC
 ```
+
 geography weighted measures recommended is 22 neighbours
 
 CV:
+
 ```{r}
 bw_CV <- bw.gwr(GDPPC ~ 1,
                  data = hunan_sp,
@@ -89,7 +94,9 @@ bw_CV <- bw.gwr(GDPPC ~ 1,
 ```{r}
 bw_CV
 ```
+
 to see fixed distances change adaptive to false
+
 ```{r}
 bw_AIC <- bw.gwr(GDPPC ~ 1,
                  data = hunan_sp,
@@ -102,6 +109,7 @@ bw_AIC <- bw.gwr(GDPPC ~ 1,
 ```{r}
 bw_AIC
 ```
+
 ```{r}
 bw_CV <- bw.gwr(GDPPC ~ 1,
                  data = hunan_sp,
@@ -114,12 +122,13 @@ bw_CV <- bw.gwr(GDPPC ~ 1,
 ```{r}
 bw_CV
 ```
-recommended aic is 160.557km (unit is in km!)
-cv is 76.18km as compared to adaptive distance where cv and aic is the same
+
+recommended aic is 160.557km (unit is in km!) cv is 76.18km as compared to adaptive distance where cv and aic is the same
 
 computing geographically weighted summary statistics
 
-must make sure adaptive bandwith must be same as bw_AIC, else give wrong data 
+must make sure adaptive bandwith must be same as bw_AIC, else give wrong data
+
 ```{r}
 bw_AIC <- bw.gwr(GDPPC ~ 1,
                  data = hunan_sp,
@@ -138,18 +147,16 @@ gwstat <- gwss(data = hunan_sp,
 
 important is sdf spatial data
 
-diff between sp and gws is gws includes itself
-gwss has no unique identifier so have a hard time doing join
-to be able to append results 
-1) take sdf convert to dataframe
+diff between sp and gws is gws includes itself gwss has no unique identifier so have a hard time doing join to be able to append results 1) take sdf convert to dataframe
 
 make life easier by taking it out of sdf that looks the same as @data
+
 ```{r}
 gwstat_df <- as.data.frame(gwstat$SDF)
 ```
-cbind only works well if gwstat_df is not touched
-no sorting or arrangement
-cbind() to append the newly derived data data.frame onto hunan_sf sf data 
+
+cbind only works well if gwstat_df is not touched no sorting or arrangement cbind() to append the newly derived data data.frame onto hunan_sf sf data
+
 ```{r}
 hunan_gstat <- cbind(hunan_sf, gwstat_df)
 ```
@@ -196,6 +203,7 @@ tm_shape(hunan_gstat) +
 ```{r}
 
 ```
+
 ```{r}
 
 ```
