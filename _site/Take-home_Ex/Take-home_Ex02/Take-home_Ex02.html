@@ -264,12 +264,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
-  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives"><strong>Objectives</strong></a></li>
-  <li><a href="#the-task" id="toc-the-task" class="nav-link" data-scroll-target="#the-task"><strong>The Task</strong></a></li>
-  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data"><strong>The Data</strong></a></li>
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives">Objectives</a></li>
+  <li><a href="#the-task" id="toc-the-task" class="nav-link" data-scroll-target="#the-task">The Task</a></li>
+  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The Data</a></li>
   <li><a href="#importing-package" id="toc-importing-package" class="nav-link" data-scroll-target="#importing-package">Importing Package</a>
   <ul class="collapse">
-  <li><a href="#dependencies" id="toc-dependencies" class="nav-link" data-scroll-target="#dependencies"><strong>Dependencies</strong></a></li>
+  <li><a href="#dependencies" id="toc-dependencies" class="nav-link" data-scroll-target="#dependencies">Dependencies</a></li>
   <li><a href="#geospatial-data" id="toc-geospatial-data" class="nav-link" data-scroll-target="#geospatial-data">Geospatial data</a></li>
   <li><a href="#aspatial-data" id="toc-aspatial-data" class="nav-link" data-scroll-target="#aspatial-data">Aspatial data</a></li>
   </ul></li>
@@ -348,7 +348,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>In Thailand, drug abuse is one of the major social issue. There are about 2.7 million youths using drugs in Thailand. Among youths aged between 15 and 19 years, there are about 300,000 who have needs for drug treatment. Most of Thai youths involved with drugs are vocational-school students, which nearly doubles in number compared to secondary-school students.</p>
 </section>
 <section id="objectives" class="level1">
-<h1><strong>Objectives</strong></h1>
+<h1>Objectives</h1>
 <p>As a curious geospatial analytics green horn, you are interested to discover:</p>
 <ul>
 <li><p>if the key indicators of drug abuse of Thailand are independent from space.</p></li>
@@ -357,7 +357,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 </section>
 <section id="the-task" class="level1">
-<h1><strong>The Task</strong></h1>
+<h1>The Task</h1>
 <p>The specific tasks of this take-home exercise are as follows:</p>
 <ul>
 <li><p>Using appropriate function of <strong>sf</strong> and <strong>tidyverse</strong>, preparing the following geospatial data layer:</p>
@@ -371,7 +371,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 </section>
 <section id="the-data" class="level1">
-<h1><strong>The Data</strong></h1>
+<h1>The Data</h1>
 <p>For the purpose of this take-home exercise, two data sets shall be used, they are:</p>
 <ul>
 <li><p><a href="https://www.kaggle.com/datasets/thaweewatboy/thailand-drug-offenses-2017-2022">Thailand Drug Offenses [2017-2022]</a> at Kaggle.</p></li>
@@ -381,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="importing-package" class="level1">
 <h1>Importing Package</h1>
 <section id="dependencies" class="level2">
-<h2 class="anchored" data-anchor-id="dependencies"><strong>Dependencies</strong></h2>
+<h2 class="anchored" data-anchor-id="dependencies">Dependencies</h2>
 <p>Loading the required packages</p>
 <ol type="1">
 <li><p><strong>sf :</strong> Needed to handle spatial data through the new simple features standard</p></li>
@@ -645,7 +645,7 @@ dbl (2): fiscal_year, no_cases
 </div>
 </div>
 <p>From the above output, the types of offences in the aspatial data includes suspected crimes.</p>
-<p>While including suspected crimes have its advantages such as insights to emerging crime hotspots. However, the following are the reasons I have decided to exclude suspected cases:</p>
+<p>Although, including suspected crimes have its advantages such as insights to emerging crime hotspots, the following are the reasons I have decided to exclude suspected cases:</p>
 <p><strong>Accuracy and Precision</strong>: Suspected cases may not be confirmed as actual crimes, so including them could overestimate crime rates and lead to misleading conclusions. This can distort the spatial patterns and cause unnecessary alarm in areas where crimes were not ultimately verified.</p>
 <p><strong>Data Quality and Reliability</strong>: Suspected cases might introduce bias due to inconsistencies in how they are reported or defined across regions. For robust analysis, it’s often better to focus on confirmed cases to ensure the data’s reliability and comparability.</p>
 <p>Therefore, we will be extracting only the confirmed cases from the types of drug offenses in the aspatial data for analysis.</p>
@@ -1002,7 +1002,7 @@ Link number distribution:
 </div>
 </div>
 </div>
-<p>From the quick glance, the results are leaning towards no signs of clustering. We should run permutations of the Global Moran’s I to investigate further.</p>
+<p>From the quick glance, the results are leaning towards random patterns. We should run permutations of the Global Moran’s I to investigate further.</p>
 </section>
 <section id="permutations-of-global-morans-i" class="level2">
 <h2 class="anchored" data-anchor-id="permutations-of-global-morans-i">Permutations of Global Moran’s I</h2>
@@ -1203,7 +1203,7 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <section id="skewness-of-the-lisa" class="level2">
 <h2 class="anchored" data-anchor-id="skewness-of-the-lisa">Skewness of the LISA</h2>
-<p>In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are.</p>
+<p>In order to identify if we should use mean or median values for the visualisation, we need to identify how skewed the data are.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-6-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-1" role="tab" aria-controls="tabset-6-1" aria-selected="true">2017</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-2" role="tab" aria-controls="tabset-6-2" aria-selected="false">2018</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-3" role="tab" aria-controls="tabset-6-3" aria-selected="false">2019</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-4" role="tab" aria-controls="tabset-6-4" aria-selected="false">2020</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-5" role="tab" aria-controls="tabset-6-5" aria-selected="false">2021</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-6" role="tab" aria-controls="tabset-6-6" aria-selected="false">2022</a></li></ul>
 <div class="tab-content">
@@ -1652,16 +1652,14 @@ alternative hypothesis: two.sided</code></pre>
 <h2 class="anchored" data-anchor-id="inference-1">Inference</h2>
 <p>Based on the Local Moran’s I maps of Thailand from 2017 to 2022 above, the key conclusions that can be drawn are:</p>
 <ol type="1">
-<li><p>A persistent High-High cluster appears in the northeastern region in most years (2017, 2018, 2021, 2022), suggesting a consistent hotspot.This might suggests an entrenched drug problem in this region. Other areas show more variability, shifting between different cluster types across years.</p></li>
-<li><p>There’s limited evidence of Low-Low clusters throughout the period which might suggest that low drug related crimes in one province do not influence drug related crimes in its neighbouring province.</p></li>
+<li><p>A <strong>persistent High-High cluster appears in the northeastern region in most years</strong> (2017, 2018, 2021, 2022), suggesting a consistent hotspot.This might suggests an entrenched drug problem in this region. Other areas show more variability, shifting between different cluster types across years.</p></li>
+<li><p>There’s limited evidence of Low-Low clusters throughout the period which might suggest that <strong>low drug related crimes in one province do not influence drug related crimes in its neighbouring province</strong>.</p></li>
 </ol>
 </section>
 </section>
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
-<p>The results suggest that while certain areas (like the northeastern region) show persistent outliers of drug abuse, the overall spatial pattern of random and varies over time.</p>
-<p>This calls for adaptive and regionally-targeted law enforcement strategies to address the localized nature of drug problems, particularly in persistent hotspot areas.</p>
-<p>Simultaneously, broader preventive measures may be necessary to address fluctuating crime patterns in other regions.</p>
+<p>The results suggest that while certain areas (like the northeastern region) show persistent outliers of drug abuse, the overall spatial pattern is random and varies over time. Policing effort should be enforced regardless of the province and broader preventive measures may be necessary to address fluctuating crime patterns.</p>
 
 
 </section>

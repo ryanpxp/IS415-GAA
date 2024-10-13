@@ -17,7 +17,7 @@ The geopolitics of Thailand which is near the [Golden Triangle](https://en.wikip
 
 In Thailand, drug abuse is one of the major social issue. There are about 2.7 million youths using drugs in Thailand. Among youths aged between 15 and 19 years, there are about 300,000 who have needs for drug treatment. Most of Thai youths involved with drugs are vocational-school students, which nearly doubles in number compared to secondary-school students.
 
-# **Objectives**
+# Objectives
 
 As a curious geospatial analytics green horn, you are interested to discover:
 
@@ -27,7 +27,7 @@ As a curious geospatial analytics green horn, you are interested to discover:
 
 -   Last but not least, to investigate how the observation above evolve over time.
 
-# **The Task**
+# The Task
 
 The specific tasks of this take-home exercise are as follows:
 
@@ -43,7 +43,7 @@ The specific tasks of this take-home exercise are as follows:
 
 -   Describe the spatial patterns revealed by the analysis above.
 
-# **The Data**
+# The Data
 
 For the purpose of this take-home exercise, two data sets shall be used, they are:
 
@@ -53,7 +53,7 @@ For the purpose of this take-home exercise, two data sets shall be used, they ar
 
 # Importing Package
 
-## **Dependencies**
+## Dependencies
 
 Loading the required packages
 
@@ -154,7 +154,7 @@ unique(drugs$types_of_drug_offenses)
 
 From the above output, the types of offences in the aspatial data includes suspected crimes.
 
-While including suspected crimes have its advantages such as insights to emerging crime hotspots. However, the following are the reasons I have decided to exclude suspected cases:
+Although, including suspected crimes have its advantages such as insights to emerging crime hotspots, the following are the reasons I have decided to exclude suspected cases:
 
 **Accuracy and Precision**: Suspected cases may not be confirmed as actual crimes, so including them could overestimate crime rates and lead to misleading conclusions. This can distort the spatial patterns and cause unnecessary alarm in areas where crimes were not ultimately verified.
 
@@ -523,7 +523,7 @@ glimpse(moranI2022)
 ```
 :::
 
-From the quick glance, the results are leaning towards no signs of clustering. We should run permutations of the Global Moran's I to investigate further.
+From the quick glance, the results are leaning towards random patterns. We should run permutations of the Global Moran's I to investigate further.
 
 ## Permutations of Global Moran's I
 
@@ -667,7 +667,7 @@ lisa2022 <- wm_q2022 %>%
 
 ## Skewness of the LISA
 
-In order to identify if we should use p_ii or ii values for the visualisation, we need to identify how skewed the data are.
+In order to identify if we should use mean or median values for the visualisation, we need to identify how skewed the data are.
 
 ::: panel-tabset
 ### 2017
@@ -1010,14 +1010,10 @@ tmap_arrange(map_2017, map_2018, map_2019, map_2020, map_2021, map_2022, ncol = 
 
 Based on the Local Moran's I maps of Thailand from 2017 to 2022 above, the key conclusions that can be drawn are:
 
-1.  A persistent High-High cluster appears in the northeastern region in most years (2017, 2018, 2021, 2022), suggesting a consistent hotspot.This might suggests an entrenched drug problem in this region. Other areas show more variability, shifting between different cluster types across years.
+1.  A **persistent High-High cluster appears in the northeastern region in most years** (2017, 2018, 2021, 2022), suggesting a consistent hotspot.This might suggests an entrenched drug problem in this region. Other areas show more variability, shifting between different cluster types across years.
 
-2.  There's limited evidence of Low-Low clusters throughout the period which might suggest that low drug related crimes in one province do not influence drug related crimes in its neighbouring province.
+2.  There's limited evidence of Low-Low clusters throughout the period which might suggest that **low drug related crimes in one province do not influence drug related crimes in its neighbouring province**.
 
 # Conclusion
 
-The results suggest that while certain areas (like the northeastern region) show persistent outliers of drug abuse, the overall spatial pattern of random and varies over time.
-
-This calls for adaptive and regionally-targeted law enforcement strategies to address the localized nature of drug problems, particularly in persistent hotspot areas.
-
-Simultaneously, broader preventive measures may be necessary to address fluctuating crime patterns in other regions.
+The results suggest that while certain areas (like the northeastern region) show persistent outliers of drug abuse, the overall spatial pattern is random and varies over time. Policing effort should be enforced regardless of the province and broader preventive measures may be necessary to address fluctuating crime patterns.
