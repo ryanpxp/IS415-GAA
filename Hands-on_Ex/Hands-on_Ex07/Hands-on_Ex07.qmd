@@ -914,7 +914,7 @@ The parallel coordinate plot above indicates that households in Cluster 4 townsh
 
 -   **uniminmax**: Scale so the minimum of the variable is zero and the maximum is one.
 
--    **globalminmax**: No scaling; the range is defined by the global minimum and maximum.
+-   **globalminmax**: No scaling; the range is defined by the global minimum and maximum.
 
 -   **center**: Standardizes vertical height using uniminmax and centers each variable at a value specified by the `scaleSummary` parameter.
 
@@ -932,5 +932,3 @@ shan_sf_ngeo_cluster %>%
             mean_MPHONE_PR = mean(MPHONE_PR),
             mean_COMPUTER_PR = mean(COMPUTER_PR))
 ```
-
-
