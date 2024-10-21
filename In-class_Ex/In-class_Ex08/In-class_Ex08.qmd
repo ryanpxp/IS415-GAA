@@ -1,0 +1,11 @@
+---
+title: "In-class_Ex08"
+author: "Ryan Peh"
+date: "nil"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+---
+
+nil
