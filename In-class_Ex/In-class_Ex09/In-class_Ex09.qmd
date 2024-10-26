@@ -7,7 +7,9 @@ execute:
   eval: true
   echo: true
 ---
+
 ## Data
+
 ```{r}
 pacman::p_load(spdep, sp, tmap, sf, ClustGeo, 
                cluster, factoextra, NbClust,
@@ -28,18 +30,14 @@ hclust_ward <- hclust(proxmat, method = 'ward.D')
 groups <- as.factor(cutree(hclust_ward, k=6))
 ```
 
-hands on use clusgap to detect cutoff
-k.max = 10 is not the same as k for clustering
-this mean how long to plot in the graph to find the best k
-not the same as hierarchical clustering
-if the last k is increasing/decreasing at the graph it might be a turning point, might want to plot more k to confirm
+hands on use clusgap to detect cutoff k.max = 10 is not the same as k for clustering this mean how long to plot in the graph to find the best k not the same as hierarchical clustering if the last k is increasing/decreasing at the graph it might be a turning point, might want to plot more k to confirm
 
-min clusters to use is at least 3 because most of relationship is multi-variate 
+min clusters to use is at least 3 because most of relationship is multi-variate
 
-cbind is column binning is more like append not left join because left join need common identifier
-cbind because only one column
+cbind is column binning is more like append not left join because left join need common identifier cbind because only one column
 
 cluster is important to tidy work
+
 ```{r}
 shan_sf_cluster <- cbind(shan_sf, 
                          as.matrix(groups)) %>%
@@ -48,8 +46,8 @@ shan_sf_cluster <- cbind(shan_sf,
   rename(TS = TS.x)
 ```
 
-
 good to change the fig height and width
+
 ```{r}
 #| fig-height: 10
 #| fig-width: 12
@@ -57,33 +55,28 @@ plot(hclust_ward, cex = 0.6)
 rect.hclust(hclust_ward, k = 6, border = 2:5)
 ```
 
+has a max num of colours qtm useful for categorical data
 
-has a max num of colours
-qtm useful for categorical data 
 ```{r}
 #| fig-height: 5
 qtm(shan_sf_cluster, "CLUSTER")
 ```
-in general the clusters has some pockets
-we only consider the clustering values and not the geographical area
-so we need to see if its is geographically next to each other
+
+in general the clusters has some pockets we only consider the clustering values and not the geographical area so we need to see if its is geographically next to each other
 
 ## Spatially constraint clustering
 
-use SKATER method
-it will take the centroid for SKATER, different from neighbourhood, it doesn't care if it is adjacent or not, so it will connect in the end
-its is using distance metric
+use SKATER method it will take the centroid for SKATER, different from neighbourhood, it doesn't care if it is adjacent or not, so it will connect in the end its is using distance metric
 
-Computing nearest neighbours:
-this one no need to change to sp like hoe 7&8
-can use sf directly
+Computing nearest neighbours: this one no need to change to sp like hoe 7&8 can use sf directly
+
 ```{r}
 shan.nb <- poly2nb(shan_sf)
 summary(shan.nb)
 ```
-visualise neighbours
-usually wont show this just false eval
-not everything have to expose for takehome and project
+
+visualise neighbours usually wont show this just false eval not everything have to expose for takehome and project
+
 ```{r}
 plot(st_geometry(shan_sf), 
      border=grey(.5))
@@ -95,22 +88,22 @@ plot(shan.nb,
 ```
 
 Calculating edge costs
+
 ```{r}
 lcosts <- nbcosts(shan.nb, shan_ict)
 ```
 
-
-style have to be binary only not like other times
-need to hard code style = B
-need to exclude non neighbours
+style have to be binary only not like other times need to hard code style = B need to exclude non neighbours
 
 nb2listw to create list of neighbour weight
+
 ```{r}
 shan.w <- nb2listw(shan.nb, 
                    lcosts, 
                    style="B")
 summary(shan.w)
 ```
+
 mst:
 
 ```{r}
@@ -142,6 +135,7 @@ st_geometry will only plot the geometric(outline, polygon)
 0.5 is transparency
 
 plot one on top of another since there is 2 plot
+
 ```{r}
 #| fig-height: 10
 #| fig-width: 12
@@ -154,10 +148,10 @@ plot(skater.clust6,
      cex.circles=0.005, 
      add=TRUE)
 ```
-still using qtm 
 
-numerical become categorical - as.factor - convert group object
-as.factor.groups_mat. - field name
+still using qtm
+
+numerical become categorical - as.factor - convert group object as.factor.groups_mat. - field name
 
 ```{r}
 #| fig-height: 5
@@ -167,8 +161,8 @@ shan_sf_spatialcluster <- cbind(shan_sf_cluster, as.factor(groups_mat)) %>%
 qtm(shan_sf_spatialcluster, "skater_CLUSTER")
 ```
 
-
 ## ClustGeo
+
 soft classification method
 
 user can try out different combination
@@ -176,24 +170,24 @@ user can try out different combination
 user can choose spatial interaction so he can look for things he want.e.g. measure more attribute dist, look for .2
 
 dont choose ends usually, because it means all affected by the attribute
+
 ```{r}
 dist <- st_distance(shan_sf, shan_sf)
 distmat <- as.dist(dist)
 ```
 
-important for visualising
-seq is alw 0 to 1, 0.1 means 0.1 interval
+important for visualising seq is alw 0 to 1, 0.1 means 0.1 interval
 
-when need to expose dont expose only expose the one from
-the first graph as the bottom one not useful for user to decide which one to use
+when need to expose dont expose only expose the one from the first graph as the bottom one not useful for user to decide which one to use
+
 ```{r}
 cr <- choicealpha(proxmat, distmat, 
                   range.alpha = seq(0, 1, 0.1), 
                   K=6, graph = TRUE)
 ```
 
-
 alpha should be a slider
+
 ```{r}
 clustG <- hclustgeo(proxmat, distmat, alpha = 0.2)
 groups <- as.factor(cutree(clustG, k=6))
@@ -202,17 +196,15 @@ shan_sf_clustGeo <- cbind(shan_sf,
   rename(`clustGeo` = `as.matrix.groups.`)
 ```
 
-after doing clustering, dont stop here need to interpret cluster 1 to 6
-to do this need to do parallel coordinates on slide deck around slide 51
+after doing clustering, dont stop here need to interpret cluster 1 to 6 to do this need to do parallel coordinates on slide deck around slide 51
 
-instead of having multiple dimension where it is hard to visualise, turn it into 2d plot
-join line with other observation
-each line represent one observation
-this is focused on interactive 
+instead of having multiple dimension where it is hard to visualise, turn it into 2d plot join line with other observation each line represent one observation this is focused on interactive
+
 ```{r}
 #| fig-height: 5
 qtm(shan_sf_clustGeo, "clustGeo")
 ```
+
 ## parallel plot
 
 from ggarray, inside ggparcraw?
@@ -220,6 +212,7 @@ from ggarray, inside ggparcraw?
 angle is to turn labels 30 degree to look better
 
 instead of facet use filter for selecting
+
 ```{r}
 #| fig-width: 20
 #| fig-height: 10

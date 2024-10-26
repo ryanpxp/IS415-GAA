@@ -84,7 +84,7 @@ The Myanmar Township Boundary GIS data is in ESRI shapefile format. It will be i
 shan_sf <- st_read(dsn = "data/geospatial", 
                    layer = "myanmar_township_boundaries") %>%
   filter(ST %in% c("Shan (East)", "Shan (North)", "Shan (South)")) %>%
-  select(c(2:7))
+  dplyr::select(c(2:7))
 ```
 
 ### **3.2 Importing aspatial data into R environment**
@@ -317,7 +317,7 @@ The code chunk below will be used to extract the clustering variables from the *
 ```{r}
 cluster_vars <- shan_sf %>%
   st_set_geometry(NULL) %>%
-  select("TS.x", "RADIO_PR", "TV_PR", "LLPHONE_PR", "MPHONE_PR", "COMPUTER_PR")
+  dplyr::select("TS.x", "RADIO_PR", "TV_PR", "LLPHONE_PR", "MPHONE_PR", "COMPUTER_PR")
 head(cluster_vars,10)
 ```
 
@@ -335,7 +335,7 @@ Notice that the row number has been replaced into the township name.
 Now, we will delete the TS.x field by using the code chunk below.
 
 ```{r}
-shan_ict <- select(cluster_vars, c(2:6))
+shan_ict <- dplyr::select(cluster_vars, c(2:6))
 head(shan_ict, 10)
 ```
 
