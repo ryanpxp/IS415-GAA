@@ -733,9 +733,4 @@ tm_shape(condo_resale.sf.adaptive) +
            border.lwd = 1)
 ```
 
-## **13.10 Reference**
-
-Gollini I, Lu B, Charlton M, Brunsdon C, Harris P (2015) “GWmodel: an R Package for exploring Spatial Heterogeneity using Geographically Weighted Models”. *Journal of Statistical Software*, 63(17):1-50, http://www.jstatsoft.org/v63/i17/
-
-Lu B, Harris P, Charlton M, Brunsdon C (2014) “The GWmodel R Package: further topics for exploring Spatial Heterogeneity using GeographicallyWeighted Models”. *Geo-spatial Information Science* 17(2): 85-101, http://www.tandfonline.com/doi/abs/10.1080/1009502.2014.917453
 
