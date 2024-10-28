@@ -1,0 +1,229 @@
+---
+title: "In-class_Ex10"
+author: "Ryan Peh"
+date: "October 28, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+---
+
+## Data
+notes
+
+linearly distributed- most data should be near 0
+collinearity - related not
+spatial autocorrelation - see observed relation is not due to space
+
+```{r}
+pacman::p_load(olsrr, ggstatsplot, sf, tmap, tidyverse, performance, see, sfdep)
+```
+
+```{r}
+condo_resale <- read_csv("data/aspatial/Condo_resale_2015.csv")
+mpsz = st_read(dsn = "data/geospatial", layer = "MP14_SUBZONE_WEB_PL")
+```
+```{r}
+#| eval: false
+write_rds(condo_resale.sf, "data/rds/condo_resale_sf.rds")
+```
+
+```{r}
+condo_resale_sf <- read_rds("data/rds/condo_resale_sf.rds")
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 12
+ggcorrmat(condo_resale[ , 5:23])
+```
+building a hedonic pricing model by using multiple linear regression method
+
+signifi. code to see legend of sig values
+for eyeballing
+
+model
+```{r}
+condo_mlr <- lm(formula = SELLING_PRICE ~ AREA_SQM + AGE + PROX_CBD + PROX_CHILDCARE + PROX_ELDERLYCARE + PROX_URA_GROWTH_AREA + PROX_HAWKER_MARKET + PROX_KINDERGARTEN + PROX_MRT + PROX_PARK + PROX_PRIMARY_SCH + PROX_TOP_PRIMARY_SCH + PROX_SHOPPING_MALL + PROX_SUPERMARKET + PROX_BUS_STOP + NO_Of_UNITS + FAMILY_FRIENDLY + FREEHOLD + LEASEHOLD_99YR, data=condo_resale_sf)
+summary(condo_mlr)
+```
+
+ols_regress for generating tidy linear regression report 
+with this no need to see summary()
+can just use this to see
+
+everything is same but just more systematic
+model summary is on top instead of at the bottom
+annova <-> f test
+
+if saved will see that its large ols_regress object instead of large lm obj
+```{r}
+ols_regress(condo_mlr)
+```
+
+will focus on p value for this in class, can have diff options though
+
+forward stepwise
+
+stepwise - see which one is more significant first then insert
+r square is increasing after ea iteration
+p val help to eliminate
+base model is alw 0 in forward
+```{r}
+condo_fw_mlr <- ols_step_forward_p(
+  condo_mlr,
+  p_val = 0.05,
+  details = FALSE
+)
+condo_fw_mlr
+```
+plot
+
+ideally have curve not flat
+
+```{r}
+plot(condo_fw_mlr)
+```
+
+```{r}
+condo_bw_mlr <- ols_step_backward_p(
+  condo_mlr,
+  p_val = 0.05,
+  details = FALSE
+)
+condo_bw_mlr
+```
+
+backwards stepwise
+
+start with full model
+```{r}
+plot(condo_bw_mlr)
+```
+
+
+```{r}
+condo_sb_mlr <- ols_step_both_p(
+  condo_mlr,
+  p_val = 0.05,
+  details = FALSE
+)
+condo_sb_mlr
+```
+
+
+```{r}
+plot(condo_sb_mlr)
+```
+
+model selection
+
+model is the wrapper for the stepwise
+need to use it to compare with lm()
+```{r}
+metric <- compare_performance(condo_mlr,
+                              condo_fw_mlr$model,
+                              condo_bw_mlr$model,
+                              condo_sb_mlr$model)
+```
+
+gsub() to tidy test value in name field
+its nested as a sub model so need to clean it up using regex
+```{r}
+metric$Name <- gsub(".*\\\\([a-zA-Z0-9_]+)\\\\, \\\\model\\\\.*","\\1", metric$Name)
+```
+
+the different indices are normalized and larger values indicate a better model performance. so points closer to the center indicates a worse fit indices
+
+blue is similar to brown one so it overlaps
+
+from see package
+```{r}
+plot(metric)
+```
+
+visualising model parameters
+
+can see as a visual by sorting as ascending
+```{r}
+ggcoefstats(condo_sb_mlr$model,
+            sort = "ascending")
+```
+
+checking for multicollinearity
+```{r}
+check_collinearity(condo_sb_mlr$model)
+```
+red no good blue still can green good
+
+theme to make sure the labels dont overlap making it hard to read
+
+whiskers mean confidence interval?
+```{r}
+plot(check_collinearity(condo_sb_mlr$model)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+linearity assumption test
+
+have 6 plots we only pick out 2nd one which is the linearity plot
+
+x is fitter value the sb_mlr
+
+figure below reveals that most of the data points scattered around 
+```{r}
+out <- plot(check_model(condo_sb_mlr$model,
+                        panel = FALSE))
+out[[2]]
+```
+normality assumption test
+
+residual of multiple linear regression mode is resemble normal distribution
+
+```{r}
+plot(check_normality(condo_sb_mlr$model))
+```
+checking outliers
+
+has more method
+
+cook helps in visualising hence we pick it
+```{r}
+outliers <- check_outliers(condo_sb_mlr$model,
+                           method = "cook")
+outliers
+```
+
+can use a visual one instead if dont want command line 
+at a glance can see if there are any outliers
+
+```{r}
+plot(check_outliers(condo_sb_mlr$model,
+                           method = "cook"))
+```
+spatially non-stationary assumption
+
+h0 - the residuals are randomly distributed (aka spatial stationary)
+h1 - the residuals are spatially non-stationary
+
+visualising spatial non-stationary
+```{r}
+#| eval: false
+mlr_output <- as.data.frame(condo_fw_mlr$model$residuals)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
