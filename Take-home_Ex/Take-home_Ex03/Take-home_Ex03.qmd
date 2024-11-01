@@ -1,0 +1,660 @@
+---
+title: "Take-home Ex3"
+author: "Ryan Peh"
+date: "October 31, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+---
+
+
+```{r}
+pacman::p_load(olsrr, ggstatsplot, sf, tmap, tidyverse, performance, see, sfdep,lubridate)
+```
+
+
+
+<might need broom>
+
+
+
+
+
+
+
+
+Income Inequality Data: Household income inequality by district (https://data.gov.my/data-catalogue/hh_inequality_district)
+
+Crime Data: Crime rates by district (https://data.gov.my/data-catalogue/crime_district)
+
+Shapefile (https://data.humdata.org/dataset/cod-ab-mys)
+
+
+
+<more>
+
+## aspatial
+```{r}
+crime <- read_csv("data/aspatial/crime_district.csv")
+```
+
+```{r}
+inequality <- read_csv("data/aspatial/inequality_district.csv")
+```
+
+```{r}
+poverty <- read_csv("data/aspatial/poverty_district.csv")
+```
+
+```{r}
+income <- read_csv("data/aspatial/income_district.csv")
+```
+
+## geospatial
+
+```{r}
+msia = st_read(dsn = "data/geospatial", layer = "mys_admbnda_adm2_unhcr_20210211")
+```
+
+```{r}
+st_crs(msia)
+```
+
+```{r}
+msia <- msia %>%
+  st_transform(crs = 3168)
+```
+
+```{r}
+st_crs(msia)
+```
+```{r}
+str(msia)
+```
+
+```{r}
+u_msia <- st_union(msia)
+plot(u_msia)
+```
+
+```{r}
+crime
+```
+
+looking at the crime object we can see that "All" fields is included
+
+
+filter out columns where district is "All"
+```{r}
+crime_filtered <- crime %>% filter(district != "All")
+```
+
+# Convert the date column to year format and removed old date
+
+keep only 2019 and 2022 to match the other datasets 
+```{r}
+crime_filtered <- crime_filtered %>%
+  mutate(year = year(date))%>%
+  select(-date) %>%
+  filter(year %in% c(2019, 2022))         
+```
+
+```{r}
+income <- income %>%
+  mutate(year = year(date))%>%
+  select(-date)           
+```
+
+```{r}
+poverty <- poverty %>%
+  mutate(year = year(date))%>%
+  select(-date)           
+```
+
+```{r}
+inequality <- inequality %>%
+  mutate(year = year(date))%>%
+  select(-date)           
+```
+
+```{r}
+na <- crime_filtered %>%
+  summarise(na_district = sum(is.na(district)),
+            na_category = sum(is.na(category)),
+            na_type = sum(is.na(type)),
+            na_date = sum(is.na(date)),
+            na_crimes = sum(is.na(crimes))
+            )
+print(na)
+```
+
+```{r}
+na <- inequality %>%
+  summarise(na_district = sum(is.na(district)),
+            na_date = sum(is.na(date)),
+            na_gini = sum(is.na(gini))
+            )
+print(na)
+```
+
+
+<   do same for other dataset  >
+
+
+# function for renaming
+```{r}
+rename_districts <- function(data) {
+  data <- data %>%
+    mutate(district = case_when(
+      district %in% c("Iskandar Puteri", "Nusajaya", "Johor Bahru Selatan", "Johor Bahru Utara", "Seri Alam") ~ "Johor Bahru",
+      district == "Bandar Bharu" ~ "Bandar Baharu",
+      district %in% c("Brickfields", "Cheras", "Dang Wangi", "Sentul", "Wangsa Maju","W.P. Kuala Lumpur") ~ "WP. Kuala Lumpur",
+      district == "Nilai" ~ "Seremban",
+      district == "Cameron Highland" ~ "Cameron Highlands",
+      district == "Kuala Lipis" ~ "Lipis",
+      district %in% c("Batu Gajah", "Ipoh") ~ "Kinta",
+      district == "Gerik" ~ "Ulu Perak",
+      district == "Manjung" ~ "Manjung (Dinding)",
+      district == "Pangkalan Hulu" ~ "Ulu Perak",
+      district %in% c("Selama", "Taiping", "Larut dan Matang") ~ "Larut Dan Matang",
+      district == "Sungai Siput" ~ "Kuala Kangsar",
+      district %in% c("Tanjong Malim", "Tapah", "Bagan Datuk", "Muallim") ~ "Batang Padang",
+      district %in% c("Arau", "Kangar", "Padang Besar") ~ "Perlis",
+      state == "Pulau Pinang" & district == "Seberang Perai Selatan" ~ "S.P.Selatan",
+      district == "Seberang Perai Tengah" ~ "S.P. Tengah",
+      district == "Seberang Perai Utara" ~ "S.P. Utara",
+      district == "Ampang Jaya" ~ "Gombak",
+      district == "Kajang" ~ "Ulu Langat",
+      district %in% c("Pengkalan Hulu","Hulu Perak") ~ "Ulu Perak",
+      district == "Hulu Selangor" ~ "Ulu Selangor",
+      district %in% c("Klang Selatan", "Klang Utara") ~ "Klang",
+      district %in% c("Petaling Jaya", "Serdang", "Sg. Buloh", "Shah Alam", "Subang Jaya", "Sungai Buloh") ~ "Petaling",
+      district == "Kota Kinabatangan" ~ "Kinabatangan",
+      district == "Kota Samarahan" ~ "Samarahan",
+      district %in% c("Matu Daro", "Tanjung Manis") ~ "Mukah",
+      district == "Padawan" ~ "Kuching",
+      district == "Kulai" ~ "Kulaijaya",
+      district == "Tangkak" ~ "Ledang",
+      district == "Kecil Lojing" ~ "Gua Musang",
+      district == "Kalabakan" ~ "Tawau",
+      district == "Telupid" ~ "Beluran",
+      district == "Beluru" ~ "Miri",
+      district == "Bukit Mabong" ~ "Kapit",
+      district == "Kabong" ~ "Saratok",
+      district == "Maradong" ~ "Meradong",
+      district == "Pusa" ~ "Betong",
+      district == "Sebauh" ~ "Bintulu",
+      district == "Subis" ~ "Miri",
+      district == "Tebedu" ~ "Serian",
+      district == "Telang Usan" ~ "Marudi",
+      district == "Kuala Nerus" ~ "Kuala Terengganu",
+      TRUE ~ district
+    ))
+  
+  return(data)
+}
+
+```
+
+```{r}
+crime_s <- rename_districts(crime_filtered)
+```
+
+```{r}
+crime_s <- crime_s %>%
+  group_by(state, district, category, type, year) %>% 
+  summarize(crimes = sum(crimes), .groups = 'drop')
+```
+
+```{r}
+sort(unique(msia$ADM2_EN))
+```
+
+ Unique values in msia$ADM2_EN that are not in crime_filtered$district
+```{r}
+aspatial_missing <- setdiff(unique(msia$ADM2_EN), unique(crime_s$district))
+
+print(aspatial_missing)
+```
+
+# Unique values in crime_filtered$district that are not in msia$ADM2_EN
+```{r}
+geospatial_missing <- setdiff(unique(crime_s$district), unique(msia$ADM2_EN))
+
+print(geospatial_missing)
+```
+```{r}
+geospatial_missing <- setdiff(unique(income_s$district), unique(msia$ADM2_EN))
+
+print(geospatial_missing)
+```
+
+```{r}
+income_s <- rename_districts(income)
+```
+
+```{r}
+income_s <- income_s %>%
+  group_by(state, district, year) %>% 
+  summarize(
+    income_mean = sum(income_mean),
+    income_median = sum(income_median),
+    .groups = 'drop'
+  )
+```
+
+```{r}
+inequality_s <- rename_districts(inequality)
+```
+
+```{r}
+inequality_s <- inequality_s %>%
+  group_by(state, district, year) %>% 
+  summarize(
+    inequality = sum(gini),
+    .groups = 'drop'
+  )
+```
+
+```{r}
+geospatial_missing <- setdiff(unique(inequality_s$district), unique(msia$ADM2_EN))
+
+print(geospatial_missing)
+```
+
+```{r}
+poverty_s <- rename_districts(poverty)
+```
+
+```{r}
+poverty_s <- poverty_s %>%
+  group_by(state, district, year) %>% 
+  summarize(
+    poverty_relative = sum(poverty_relative),
+    poverty_absolute = sum(poverty_absolute),
+    .groups = 'drop'
+  )
+```
+
+```{r}
+geospatial_missing <- setdiff(unique(poverty_s$district), unique(msia$ADM2_EN))
+
+print(geospatial_missing)
+```
+
+
+# Start by joining crime with poverty, then add inequality and income
+
+```{r}
+combined_data <- crime_s %>%
+  left_join(poverty_s, by = c("state", "district", "year")) %>%
+  left_join(inequality_s, by = c("state", "district", "year")) %>%
+  left_join(income_s, by = c("state", "district", "year"))
+
+```
+
+
+user can choose the type of crime data
+```{r}
+combined_data_murder <- combined_data %>%
+  filter(type == "murder")
+```
+
+```{r}
+combined_data_injury <- combined_data %>%
+  filter(type == "causing_injury")
+```
+
+```{r}
+combined_data_all <- combined_data %>%
+  filter(type == "all")
+```
+
+```{r}
+ggcorrmat(combined_data_murder[, 6:11])
+```
+```{r}
+ggcorrmat(combined_data_injury[, 6:11])
+```
+```{r}
+ggcorrmat(combined_data_all[, 6:11], sig.level = 0.05)
+```
+income median and mean are highly correlated since they are really similar and came from the same data set. Might be great for either of the variable to be removed for GWR.
+
+# function for generating regression model
+
+user is able to select which variables and data set.
+```{r}
+run_regression <- function(data, response, predictors) {
+  # Create formula from response and predictors
+  formula <- as.formula(
+    paste(response, "~", paste(predictors, collapse = " + "))
+  )
+  
+  # Run the linear model
+  model <- lm(formula = formula, data = data)
+  
+  # Return the model
+  return(model)
+}
+
+```
+
+```{r}
+# Define predictors as a vector of variable names
+predictors <- c("poverty_relative", "poverty_absolute", "inequality", "income_mean", "income_median")
+
+# Run the function with the specified data and predictors
+murder_model <- run_regression(
+  data = combined_data_murder,
+  response = "crimes",
+  predictors = predictors
+)
+
+ols_regress(murder_model)
+```
+
+```{r}
+# Define predictors as a vector of variable names
+predictors <- c("poverty_relative", "poverty_absolute", "inequality", "income_mean", "income_median")
+
+# Run the function with the specified data and predictors
+all_model <- run_regression(
+  data = combined_data_all,
+  response = "crimes",
+  predictors = predictors
+)
+
+ols_regress(all_model)
+```
+
+
+
+# Define the function
+
+```{r}
+run_stepwise_selection <- function(model, direction = "forward", p_val = 0.05, details = FALSE) {
+  if (!direction %in% c("forward", "backward", "both")) {
+    stop("Invalid direction. Choose from 'forward', 'backward', or 'both'.")
+  }
+  
+  stepwise_model <- switch(
+    direction,
+    "forward" = ols_step_forward_p(model, p_val = p_val, details = details),
+    "backward" = ols_step_backward_p(model, p_val = p_val, details = details),
+    "both" = ols_step_both_p(model, p_val = p_val, details = details)
+  )
+  
+  return(stepwise_model)
+}
+```
+
+###forward
+```{r}
+murder_fw_mlr <- run_stepwise_selection(
+  model = murder_model,
+  direction = "forward",
+  p_val = 0.05,
+  details = FALSE
+)
+
+print(murder_fw_mlr)
+```
+
+### backward
+```{r}
+murder_bw_mlr <- run_stepwise_selection(
+  model = murder_model,
+  direction = "backward",
+  p_val = 0.05,
+  details = FALSE
+)
+
+print(murder_bw_mlr)
+```
+
+### both
+```{r}
+murder_sb_mlr <- run_stepwise_selection(
+  model = murder_model,
+  direction = "both",
+  p_val = 0.05,
+  details = FALSE
+)
+
+print(murder_sb_mlr)
+```
+```{r}
+metric <- compare_performance(murder_model, 
+                    murder_fw_mlr$model,
+                    murder_bw_mlr$model,
+                    murder_sb_mlr$model)
+```
+
+```{r}
+metric$Name <- gsub(".*\\\\([a-zA-Z0-9_]+)\\\\, \\\\model\\\\.*", "\\1", metric$Name)
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 8
+plot(metric)
+```
+
+
+# Function to create a coefficient plot
+
+```{r}
+create_coef_plot <- function(model, conf.level = 0.95) {
+  ggcoefstats(model,
+              sort = "ascending",
+              title = "Estimated Coefficient",
+              conf.level = conf.level) +
+    theme(text = element_text(size = 16))
+}
+```
+
+```{r}
+create_coef_plot(murder_sb_mlr$model, conf.level = 0.95)
+```
+
+### Checksfor multicollinearity
+
+```{r}
+out <- plot(check_model(murder_sb_mlr$model, 
+                        panel = FALSE))
+out[[2]]
+```
+
+### normality test
+
+
+```{r}
+plot(check_normality(murder_sb_mlr$model))
+```
+
+A histogram might be a better approach for user to tell the distribution at a glance instead.
+```{r}
+ols_plot_resid_hist(murder_sb_mlr$model)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
