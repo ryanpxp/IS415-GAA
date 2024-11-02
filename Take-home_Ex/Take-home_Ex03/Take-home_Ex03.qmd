@@ -1,5 +1,5 @@
 ---
-title: "Take-home Ex3"
+title: "Take-home Ex03"
 author: "Ryan Peh"
 date: "October 31, 2024"
 date-modified: "last-modified"
@@ -8,58 +8,84 @@ execute:
   echo: true
 ---
 
+## **Overview and Objectives**
+
+In this take-home my aim is to prototype and evaluate the visualisation of pages and components in our Shiny application.
+
+My responsibilities will be performing Geographically Weighted Regression (GWR) on the districts of Malaysia.
+
+## **Data**
+
+-   **Income Inequality Data:** Household income inequality by district (<https://data.gov.my/data-catalogue/hh_inequality_district>)
+
+-   **Income Data:** Mean and median gross monthly by district (<https://data.gov.my/data-catalogue/hh_income_district>)
+
+-   **Poverty Data:** Poverty rates by district (<https://data.gov.my/data-catalogue/hh_poverty_district>)
+
+-   **Crime Data:** Crime rates by district (<https://data.gov.my/data-catalogue/crime_district>)
+
+-   **Malaysia - Subnational Administrative Boundaries: (**<https://data.humdata.org/dataset/cod-ab-mys?>)
+
+## Packages
+
+-   **olsrr**: Provides tools for building and validating OLS regression models with stepwise selection and diagnostics.
+
+<!-- -->
+
+-   **ggstatsplot**: Extends ggplot2 with statistical tests and data visualization in a single, user-friendly syntax.
+
+-   **sf**: Provides a standardized way to work with spatial vector data (points, lines, polygons).
+
+-   **tmap**: Creates thematic maps with interactive and static modes for spatial visualization.
+
+-   **tidyverse**: A collection of packages for easy data manipulation, visualization, and analysis.
+
+-   **performance**: Offers tools to assess, validate, and compare regression models.
+
+-   **see**: Supplies visual themes and color palettes to enhance ggplot2 visualizations.
+
+-   **sfdep**: Provides spatial dependency analysis tools specifically for sf objects.
+
+-   **GWmodel**: Implements geographically weighted regression (GWR) and spatial analysis methods.
+
+-   **lubridate**: Simplifies the handling and manipulation of dates and times.
 
 ```{r}
-pacman::p_load(olsrr, ggstatsplot, sf, tmap, tidyverse, performance, see, sfdep,lubridate)
+pacman::p_load(olsrr, ggstatsplot, sf, tmap, tidyverse, performance, see, sfdep, GWmodel, lubridate)
 ```
 
+## Data
 
+### Aspatial
 
-<might need broom>
+`read_csv()` of **sf** package will be used to import the aspatial data into R environment.
 
-
-
-
-
-
-
-
-Income Inequality Data: Household income inequality by district (https://data.gov.my/data-catalogue/hh_inequality_district)
-
-Crime Data: Crime rates by district (https://data.gov.my/data-catalogue/crime_district)
-
-Shapefile (https://data.humdata.org/dataset/cod-ab-mys)
-
-
-
-<more>
-
-## aspatial
 ```{r}
 crime <- read_csv("data/aspatial/crime_district.csv")
-```
-
-```{r}
 inequality <- read_csv("data/aspatial/inequality_district.csv")
-```
-
-```{r}
+income <- read_csv("data/aspatial/income_district.csv")
 poverty <- read_csv("data/aspatial/poverty_district.csv")
 ```
 
-```{r}
-income <- read_csv("data/aspatial/income_district.csv")
-```
+### Geospatial
 
-## geospatial
+`st_read()` of **sf** package will be used to import Malaysia shapefile into R environment in order to get the polygons representing the borders of the districts of Malaysia.
 
 ```{r}
 msia = st_read(dsn = "data/geospatial", layer = "mys_admbnda_adm2_unhcr_20210211")
 ```
 
+## Data Wrangling
+
+Before the UI prototyping can be done let’s see what type of data we are dealing with so that we can better plan for the UI components to be used.
+
+Checking the CRS of the files:
+
 ```{r}
 st_crs(msia)
 ```
+
+It seems to be using WGS 84, let's change that to EPSG:3168 instead.
 
 ```{r}
 msia <- msia %>%
@@ -69,30 +95,45 @@ msia <- msia %>%
 ```{r}
 st_crs(msia)
 ```
-```{r}
-str(msia)
-```
+
+Quick glance at the geospatial data:
 
 ```{r}
-u_msia <- st_union(msia)
-plot(u_msia)
+glimpse(msia)
 ```
+
+Quick glance at the crime data:
 
 ```{r}
-crime
+glimpse(crime)
 ```
 
-looking at the crime object we can see that "All" fields is included
+Looking at the crime object we can see that "All" fields is included for both districts and type of crime. We want to filter these columns to make it easier to work with and join with geospatial data.
 
-
-filter out columns where district is "All"
 ```{r}
 crime_filtered <- crime %>% filter(district != "All")
 ```
 
-# Convert the date column to year format and removed old date
+### Date conversion
 
-keep only 2019 and 2022 to match the other datasets 
+Taking a look at the other aspatial data:
+
+```{r}
+glimpse(income)
+```
+
+```{r}
+glimpse(inequality)
+```
+
+```{r}
+glimpse(poverty)
+```
+
+Looking at the aspatial data, we can see that the date is just the first day of each year and that the month and day does not matter. We shall just convert the column to just the year.
+
+Since the data for keep only 2019 and 2022 to match the other datasets
+
 ```{r}
 crime_filtered <- crime_filtered %>%
   mutate(year = year(date))%>%
@@ -138,11 +179,10 @@ na <- inequality %>%
 print(na)
 ```
 
-
-<   do same for other dataset  >
-
+\< do same for other dataset \>
 
 # function for renaming
+
 ```{r}
 rename_districts <- function(data) {
   data <- data %>%
@@ -198,44 +238,35 @@ rename_districts <- function(data) {
 ```
 
 ```{r}
-crime_s <- rename_districts(crime_filtered)
+crime_filtered <- rename_districts(crime_filtered)
 ```
 
 ```{r}
-crime_s <- crime_s %>%
+crime_filtered <- crime_filtered %>%
   group_by(state, district, category, type, year) %>% 
   summarize(crimes = sum(crimes), .groups = 'drop')
 ```
 
-```{r}
-sort(unique(msia$ADM2_EN))
-```
-
- Unique values in msia$ADM2_EN that are not in crime_filtered$district
-```{r}
-aspatial_missing <- setdiff(unique(msia$ADM2_EN), unique(crime_s$district))
-
-print(aspatial_missing)
-```
-
 # Unique values in crime_filtered$district that are not in msia$ADM2_EN
-```{r}
-geospatial_missing <- setdiff(unique(crime_s$district), unique(msia$ADM2_EN))
 
-print(geospatial_missing)
-```
 ```{r}
-geospatial_missing <- setdiff(unique(income_s$district), unique(msia$ADM2_EN))
+geospatial_missing <- setdiff(unique(crime_filtered$district), unique(msia$ADM2_EN))
 
 print(geospatial_missing)
 ```
 
 ```{r}
-income_s <- rename_districts(income)
+geospatial_missing <- setdiff(unique(income$district), unique(msia$ADM2_EN))
+
+print(geospatial_missing)
 ```
 
 ```{r}
-income_s <- income_s %>%
+income <- rename_districts(income)
+```
+
+```{r}
+income <- income %>%
   group_by(state, district, year) %>% 
   summarize(
     income_mean = sum(income_mean),
@@ -245,11 +276,11 @@ income_s <- income_s %>%
 ```
 
 ```{r}
-inequality_s <- rename_districts(inequality)
+inequality <- rename_districts(inequality)
 ```
 
 ```{r}
-inequality_s <- inequality_s %>%
+inequality <- inequality %>%
   group_by(state, district, year) %>% 
   summarize(
     inequality = sum(gini),
@@ -258,17 +289,17 @@ inequality_s <- inequality_s %>%
 ```
 
 ```{r}
-geospatial_missing <- setdiff(unique(inequality_s$district), unique(msia$ADM2_EN))
+geospatial_missing <- setdiff(unique(inequality$district), unique(msia$ADM2_EN))
 
 print(geospatial_missing)
 ```
 
 ```{r}
-poverty_s <- rename_districts(poverty)
+poverty <- rename_districts(poverty)
 ```
 
 ```{r}
-poverty_s <- poverty_s %>%
+poverty <- poverty %>%
   group_by(state, district, year) %>% 
   summarize(
     poverty_relative = sum(poverty_relative),
@@ -278,24 +309,33 @@ poverty_s <- poverty_s %>%
 ```
 
 ```{r}
-geospatial_missing <- setdiff(unique(poverty_s$district), unique(msia$ADM2_EN))
+geospatial_missing <- setdiff(unique(poverty$district), unique(msia$ADM2_EN))
 
 print(geospatial_missing)
 ```
 
-
 # Start by joining crime with poverty, then add inequality and income
 
 ```{r}
-combined_data <- crime_s %>%
-  left_join(poverty_s, by = c("state", "district", "year")) %>%
-  left_join(inequality_s, by = c("state", "district", "year")) %>%
-  left_join(income_s, by = c("state", "district", "year"))
+combined_data <- crime_filtered %>%
+  left_join(poverty, by = c("state", "district", "year")) %>%
+  left_join(inequality, by = c("state", "district", "year")) %>%
+  left_join(income, by = c("state", "district", "year"))
 
 ```
 
+```{r}
+msia_geometry <- msia %>%
+  select(1, 13:15)
+```
+
+```{r}
+combined_data <- combined_data %>%
+  left_join(msia_geometry, by = c("district" = "ADM2_EN"))
+```
 
 user can choose the type of crime data
+
 ```{r}
 combined_data_murder <- combined_data %>%
   filter(type == "murder")
@@ -314,17 +354,21 @@ combined_data_all <- combined_data %>%
 ```{r}
 ggcorrmat(combined_data_murder[, 6:11])
 ```
+
 ```{r}
 ggcorrmat(combined_data_injury[, 6:11])
 ```
+
 ```{r}
 ggcorrmat(combined_data_all[, 6:11], sig.level = 0.05)
 ```
+
 income median and mean are highly correlated since they are really similar and came from the same data set. Might be great for either of the variable to be removed for GWR.
 
 # function for generating regression model
 
 user is able to select which variables and data set.
+
 ```{r}
 run_regression <- function(data, response, predictors) {
   # Create formula from response and predictors
@@ -369,8 +413,6 @@ all_model <- run_regression(
 ols_regress(all_model)
 ```
 
-
-
 # Define the function
 
 ```{r}
@@ -391,6 +433,7 @@ run_stepwise_selection <- function(model, direction = "forward", p_val = 0.05, d
 ```
 
 ###forward
+
 ```{r}
 murder_fw_mlr <- run_stepwise_selection(
   model = murder_model,
@@ -403,6 +446,7 @@ print(murder_fw_mlr)
 ```
 
 ### backward
+
 ```{r}
 murder_bw_mlr <- run_stepwise_selection(
   model = murder_model,
@@ -415,6 +459,7 @@ print(murder_bw_mlr)
 ```
 
 ### both
+
 ```{r}
 murder_sb_mlr <- run_stepwise_selection(
   model = murder_model,
@@ -425,6 +470,7 @@ murder_sb_mlr <- run_stepwise_selection(
 
 print(murder_sb_mlr)
 ```
+
 ```{r}
 metric <- compare_performance(murder_model, 
                     murder_fw_mlr$model,
@@ -441,7 +487,6 @@ metric$Name <- gsub(".*\\\\([a-zA-Z0-9_]+)\\\\, \\\\model\\\\.*", "\\1", metric$
 #| fig-height: 8
 plot(metric)
 ```
-
 
 # Function to create a coefficient plot
 
@@ -469,57 +514,166 @@ out[[2]]
 
 ### normality test
 
-
 ```{r}
 plot(check_normality(murder_sb_mlr$model))
 ```
 
 A histogram might be a better approach for user to tell the distribution at a glance instead.
+
 ```{r}
 ols_plot_resid_hist(murder_sb_mlr$model)
 ```
 
 ```{r}
+plot(check_outliers(murder_sb_mlr$model,
+                           method = "cook"))
+```
+
+```{r}
+mlr_output <- as.data.frame(murder_sb_mlr$model$residuals) %>%
+  rename(`SB_MLR_RES` = `murder_sb_mlr$model$residuals`)
+```
+
+because of empty rows we need to pad "NA"
+
+```{r}
+murder_residual <- data.frame(MLR_RES = rep(NA, nrow(combined_data_murder)))
+
+murder_residual[rownames(mlr_output), "MLR_RES"] <- mlr_output$SB_MLR_RES
+```
+
+```{r}
+combined_data_murder <- cbind(combined_data_murder, 
+                        murder_residual)
+```
+
+```{r}
+combined_data_murder_st <- st_as_sf(combined_data_murder)
+```
+
+```{r}
+tm_shape(msia)+
+  tmap_options(check.and.fix = TRUE) +
+  tm_polygons(alpha = 0.4) +
+tm_shape(combined_data_murder_st) +  
+  tm_dots(col = "MLR_RES",
+          alpha = 0.6,
+          style="quantile") 
+```
+
+```{r}
+plot(check_collinearity(murder_sb_mlr$model)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+while its good to show the graph above is great to show the collinearity, showing it in a map might be better as shown below
+
+```{r}
+tmap_mode("view")
+tm_shape(combined_data_murder_st) +
+  tm_polygons(col = "MLR_RES", alpha = 0.6)+
+  tm_view(set.zoom.limits = c(5, 9))
+tmap_mode("plot")
+```
+
+```{r}
+run_regression <- function(data, response, predictors) {
+  # Create formula from response and predictors
+  formula <- as.formula(
+    paste(response, "~", paste(predictors, collapse = " + "))
+  )
+  
+  # Run the linear model
+  model <- lm(formula = formula, data = data)
+  
+  # Return the model
+  return(model)
+}
 
 ```
 
 ```{r}
+# Define predictors as a vector of variable names
+predictors <- c("poverty_relative", "poverty_absolute", "inequality", "income_mean", "income_median")
 
+# Run the function with the specified data and predictors
+murder_model <- run_regression(
+  data = combined_data_murder,
+  response = "crimes",
+  predictors = predictors
+)
+
+ols_regress(murder_model)
+```
+
+# Filter out rows with NA or Inf in the relevant columns
+
+```{r}
+combined_data_murder_st_clean <- combined_data_murder_st %>%
+  filter(
+    !is.na(crimes) & !is.na(poverty_relative) & !is.na(poverty_absolute) &
+    !is.na(inequality) & !is.na(income_mean) & !is.na(income_median) &
+    is.finite(crimes) & is.finite(poverty_relative) & is.finite(poverty_absolute) &
+    is.finite(inequality) & is.finite(income_mean) & is.finite(income_median)
+  )
 ```
 
 ```{r}
-
+bw.fixed <- bw.gwr(formula = crimes ~ poverty_relative + poverty_absolute + inequality +
+                     income_mean + income_median, 
+                   data=combined_data_murder_st_clean, 
+                   approach="CV", 
+                   kernel="gaussian", 
+                   adaptive=FALSE, 
+                   longlat=FALSE)
 ```
 
 ```{r}
-
+gwr.fixed <- gwr.basic(formula = crimes ~ poverty_relative + poverty_absolute + inequality +
+                     income_mean + income_median, 
+                       data=combined_data_murder_st_clean, 
+                       bw=bw.fixed, 
+                       kernel = 'gaussian', 
+                       longlat = FALSE)
 ```
 
 ```{r}
-
+gwr.fixed
 ```
 
 ```{r}
-
+combined_data_murder_st_clean_adaptive <- st_as_sf(gwr.fixed$SDF) %>%
+  st_transform(crs=3168)
 ```
 
 ```{r}
-
+#| eval: false
+gwr.fixed.output <- as.data.frame(gwr.fixed$SDF)
+condo_resale.sf.adaptive <- cbind(combined_data_murder_st_clean, as.matrix(gwr.fixed.output))
 ```
 
 ```{r}
-
+tmap_mode("view")
+tm_shape(combined_data_murder_st_clean_adaptive) +
+  tm_polygons(col = "Local_R2", alpha = 0.6) +
+  tm_view(set.zoom.limits = c(5, 9))
+tmap_mode("plot")
 ```
 
 ```{r}
+tmap_mode("view")
 
-```
+Local_R2 <- tm_shape(combined_data_murder_st_clean_adaptive) +
+  tm_polygons(col = "Local_R2", alpha = 0.6) +
+  tm_view(set.zoom.limits = c(5, 9))
 
-```{r}
+Inequality_TV <- tm_shape(combined_data_murder_st_clean_adaptive) +
+  tm_polygons(col = "inequality_TV", alpha = 0.6) +
+  tm_view(set.zoom.limits = c(5, 9))
 
-```
+tmap_arrange(Local_R2, Inequality_TV, asp = 1, ncol = 2, sync = TRUE)
 
-```{r}
+tmap_mode("plot")
 
 ```
 
