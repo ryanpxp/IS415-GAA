@@ -8,7 +8,7 @@ execute:
   echo: true
 ---
 
-## **Overview and Objectives**
+## Overview and Objectives
 
 In this take-home my aim is to prototype and evaluate the visualisation of pages and components in our Shiny application.
 
@@ -26,7 +26,7 @@ My responsibilities will be involving the Geographically Weighted Regression (GW
 
 -   **Malaysia - Subnational Administrative Boundaries:** (<https://data.humdata.org/dataset/cod-ab-mys?>)
 
-## **Packages**
+## Packages
 
 -   **olsrr**: Provides tools for building and validating OLS regression models with stepwise selection and diagnostics.
 
@@ -105,7 +105,7 @@ Checking the CRS of the files:
 st_crs(msia)
 ```
 
-It seems to be using WGS 84, let's change that to EPSG:3168 instead.
+It seems to be using WGS 84, lets change that to EPSG:3168 instead.
 
 ```{r}
 msia <- msia %>%
@@ -468,7 +468,7 @@ Note: Income median and mean are highly correlated since they are similar and ca
 
 ![](img/corr_anal.png)
 
-The correlation analysis will be under a tabset where user can toggle from the main GWR. On the side panel **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view and **`sliderInput()`** will be used for them to select the significance level of the correlation matrix.
+The correlation analysis will be under a tabset where user can toggle from the main GWR. On the side panel, **`selectInput()`** will be used to select independent variables that the user wants to view and the type of crimes, another **`checkboxGroupInput()`** to select the year(s) and **`sliderInput()`** will be used for them to select the significance level of the correlation matrix.,
 
 ### Linear regression model
 
@@ -606,7 +606,7 @@ While the plot looks fine, the naming of the models are confusing and special ca
 
 ![](img/model_sel.png)
 
-The correlation analysis will be under a tabset where user can toggle from the main GWR. On the side panel, **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view, **`selectInput()`** will be used to select the type of crimes, another **`checkboxGroupInput()`** to select the year(s) and **`sliderInput()`** will be used for them to select the p value of the regression models.
+The correlation analysis will be under a tabset where user can toggle from the main GWR. On the side panel, **`selectInput()`** will be used to select the type of crimes and the independent variables that the user wants to view, another **`checkboxGroupInput()`** to select the year(s) and **`sliderInput()`** will be used for them to select the p value of the regression models.
 
 ### Checks
 
@@ -646,7 +646,7 @@ plot(check_collinearity(murder_sb_mlr$model)) +
 
 ![](img/checks.png)
 
-The checks will be made up of the multicollinearity, normality, outliers, and collinearity graphs. It will be under a tabset where user can toggle from the main GWR. On the side panel, **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view, **`selectInput()`** will be used to select the type of crimes, another **`checkboxGroupInput()`** to select the year(s).
+The checks will be made up of the multicollinearity, normality, outliers, and collinearity graphs. It will be under a tabset where user can toggle from the main GWR. On the side panel, **`selectInput()`** will be used to select independent variables that the user wants to view and the type of crimes, another **`checkboxGroupInput()`** to select the year(s).
 
 #### Testing for Spatial Autocorrelation
 
@@ -769,14 +769,22 @@ tmap_mode("plot")
 
 ![](img/gwr.png)
 
-This will be the main tabset. On the side panel, **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view, **`selectInput()`** will be used to select the type of crimes, another **`checkboxGroupInput()`** to select the year(s). The three **`selectInput()`** at the bottom of the side panel will be used to control the bandwidth computation parameters.
+This will be the main tabset. On the side panel, **`selectInput()`** will be used to select independent variables that the user wants to view and the type of crimes, another **`checkboxGroupInput()`** to select the year(s). The three **`selectInput()`** at the bottom of the side panel will be used to control the bandwidth computation parameters.
 
-## Conclusion
+## Proposed Shiny Application
 
-```{r}
+### Model tabset
 
-```
+![](img/shiny1.png)
 
-```{r}
+### Correlation tabset
 
-```
+![](img/shiny2.png)
+
+### Model Selection
+
+![](img/shiny3.png)
+
+### Checks tabset
+
+![](img/shiny4.png)
