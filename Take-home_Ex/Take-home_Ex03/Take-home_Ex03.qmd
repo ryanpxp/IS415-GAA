@@ -12,9 +12,9 @@ execute:
 
 In this take-home my aim is to prototype and evaluate the visualisation of pages and components in our Shiny application.
 
-My responsibilities will be performing Geographically Weighted Regression (GWR) on the districts of Malaysia.
+My responsibilities will be involving the Geographically Weighted Regression (GWR) on the districts of Malaysia. The GWR would focus on modelling crime rates of each district with household income, income inequality and poverty.
 
-## **Data**
+## Data
 
 -   **Income Inequality Data:** Household income inequality by district (<https://data.gov.my/data-catalogue/hh_inequality_district>)
 
@@ -24,13 +24,11 @@ My responsibilities will be performing Geographically Weighted Regression (GWR) 
 
 -   **Crime Data:** Crime rates by district (<https://data.gov.my/data-catalogue/crime_district>)
 
--   **Malaysia - Subnational Administrative Boundaries: (**<https://data.humdata.org/dataset/cod-ab-mys?>)
+-   **Malaysia - Subnational Administrative Boundaries:** (<https://data.humdata.org/dataset/cod-ab-mys?>)
 
-## Packages
+## **Packages**
 
 -   **olsrr**: Provides tools for building and validating OLS regression models with stepwise selection and diagnostics.
-
-<!-- -->
 
 -   **ggstatsplot**: Extends ggplot2 with statistical tests and data visualization in a single, user-friendly syntax.
 
@@ -53,6 +51,28 @@ My responsibilities will be performing Geographically Weighted Regression (GWR) 
 ```{r}
 pacman::p_load(olsrr, ggstatsplot, sf, tmap, tidyverse, performance, see, sfdep, GWmodel, lubridate)
 ```
+
+## UI Design
+
+### Motivation
+
+Using Geographically Weighted Regression (GWR) to explore the relationship between crime rates and socioeconomic factors like household income, income inequality, and poverty allows us to understand how these factors influence crime spatially rather than uniformly across all regions. This approach is motivated by the premise that socio-economic conditions impact crime differently depending on local contexts—certain areas with high poverty may experience more crime due to limited economic opportunities, while other regions might be more influenced by income inequality. By applying GWR, we can identify these spatial variations and better understand where and how each factor contributes to crime. This spatial insight not only refines our understanding of the socio-economic drivers of crime but also supports the development of targeted interventions, enabling policymakers to address crime in a more focused and locally relevant manner.
+
+A Shiny app could visualize the spatial relationship between crime rates and socioeconomic factors like household income, income inequality, and poverty by displaying interactive, region-specific maps. Users could toggle between map layers to see how each factor correlates with crime across areas, revealing patterns that vary locally. Adjustable settings, such as bandwidth, would allow users to explore the data at different spatial scales, providing insights into whether socioeconomic conditions affect crime more strongly in specific regions. Real-time plots and statistics that update based on user inputs would further enhance understanding, making complex spatial relationships clear and actionable for policymakers and communities aiming to develop targeted crime prevention strategies.
+
+### Overall Layout
+
+![](img/overall_ui_layout.png){fig-align="center"}
+
+For the shiny application, three main components will be used for our pages: **`headerPanel`**, **`sidebarPanel`**, and **`mainPanel`**.
+
+-   **Header Panel** : This is the topmost part of the UI where we can put a description of the application or have a navbar where you can navigate different pages. Each page leads to other group members work/part in this project
+
+-   **Sidebar Panel**: This panel would mainly consist of the input controls that the user can play around with to change the map output in the **Main Panel.**
+
+-   **Main Panel** : This is the primary area of the application and it typically contains outputs. The main panel displays the output (like maps, plots, tables, etc.) based on the input given in the sidebar panel. There would be tabsets that allows users to switch between views.
+
+The various details of the UI will be explored as we try to come up with the data inputs below.
 
 ## Data
 
@@ -132,7 +152,7 @@ glimpse(poverty)
 
 Looking at the aspatial data, we can see that the date is just the first day of each year and that the month and day does not matter. We shall just convert the column to just the year.
 
-Since the data for keep only 2019 and 2022 to match the other datasets
+Since the data for poverty, income, and income inequality only has data for 2019 and 2022, we keep only 2019 and 2022 crime data to match the other data.
 
 ```{r}
 crime_filtered <- crime_filtered %>%
@@ -159,6 +179,8 @@ inequality <- inequality %>%
   select(-date)           
 ```
 
+### Check for empty rows
+
 ```{r}
 na <- crime_filtered %>%
   summarise(na_district = sum(is.na(district)),
@@ -179,9 +201,55 @@ na <- inequality %>%
 print(na)
 ```
 
-\< do same for other dataset \>
+```{r}
+na <- poverty %>%
+  summarise(na_district = sum(is.na(district)),
+            na_date = sum(is.na(date)),
+            na_poverty_absolute = sum(is.na(poverty_absolute)),
+            na_poverty_relative = sum(is.na(poverty_relative)),
+            )
+print(na)
+```
 
-# function for renaming
+```{r}
+na <- income %>%
+  summarise(na_district = sum(is.na(district)),
+            na_date = sum(is.na(date)),
+            na_poverty_income_mean = sum(is.na(income_mean)),
+            na_poverty_income_median = sum(is.na(income_median)),
+            )
+print(na)
+```
+
+### Mismatched district names
+
+District names in `crime_filtered` that are not in district names of `msia`.
+
+```{r}
+setdiff(unique(crime_filtered$district), unique(msia$ADM2_EN))
+```
+
+District names in `income` that are not in district names of `msia`.
+
+```{r}
+setdiff(unique(income$district), unique(msia$ADM2_EN))
+```
+
+District names in `inequality` that are not in district names of `msia`.
+
+```{r}
+setdiff(unique(inequality$district), unique(msia$ADM2_EN))
+```
+
+District names in `poverty` that are not in district names of `msia`.
+
+```{r}
+setdiff(unique(poverty$district), unique(msia$ADM2_EN))
+```
+
+There is no easy way to fix this but to google the districts mentioned in crime and try to map it as close as close to the district in the sf file.
+
+We shall create a function for renaming the districts in the aspatial data to match that of the geospatial data:
 
 ```{r}
 rename_districts <- function(data) {
@@ -237,9 +305,13 @@ rename_districts <- function(data) {
 
 ```
 
+Apply the renaming function to crime data:
+
 ```{r}
 crime_filtered <- rename_districts(crime_filtered)
 ```
+
+Remove and combine duplicates data that are considered to be in the same district after renaming:
 
 ```{r}
 crime_filtered <- crime_filtered %>%
@@ -247,19 +319,7 @@ crime_filtered <- crime_filtered %>%
   summarize(crimes = sum(crimes), .groups = 'drop')
 ```
 
-# Unique values in crime_filtered$district that are not in msia$ADM2_EN
-
-```{r}
-geospatial_missing <- setdiff(unique(crime_filtered$district), unique(msia$ADM2_EN))
-
-print(geospatial_missing)
-```
-
-```{r}
-geospatial_missing <- setdiff(unique(income$district), unique(msia$ADM2_EN))
-
-print(geospatial_missing)
-```
+Do the same for the other aspatial data:
 
 ```{r}
 income <- rename_districts(income)
@@ -289,12 +349,6 @@ inequality <- inequality %>%
 ```
 
 ```{r}
-geospatial_missing <- setdiff(unique(inequality$district), unique(msia$ADM2_EN))
-
-print(geospatial_missing)
-```
-
-```{r}
 poverty <- rename_districts(poverty)
 ```
 
@@ -308,13 +362,27 @@ poverty <- poverty %>%
   )
 ```
 
-```{r}
-geospatial_missing <- setdiff(unique(poverty$district), unique(msia$ADM2_EN))
+Check if there is still any mismatched district names:
 
-print(geospatial_missing)
+```{r}
+setdiff(unique(crime_filtered$district), unique(msia$ADM2_EN))
 ```
 
-# Start by joining crime with poverty, then add inequality and income
+```{r}
+setdiff(unique(income$district), unique(msia$ADM2_EN))
+```
+
+```{r}
+setdiff(unique(inequality$district), unique(msia$ADM2_EN))
+```
+
+```{r}
+setdiff(unique(poverty$district), unique(msia$ADM2_EN))
+```
+
+### Joining of data
+
+Joining the aspatial data together
 
 ```{r}
 combined_data <- crime_filtered %>%
@@ -324,50 +392,87 @@ combined_data <- crime_filtered %>%
 
 ```
 
+Filtering out redundant data and keep only relevant data
+
 ```{r}
 msia_geometry <- msia %>%
   select(1, 13:15)
 ```
+
+Joining with geospatial data
 
 ```{r}
 combined_data <- combined_data %>%
   left_join(msia_geometry, by = c("district" = "ADM2_EN"))
 ```
 
-user can choose the type of crime data
+## GWR
+
+### Type of crime selection
+
+For our Shiny app, we would like user to be able to freely choose the type of crime for their own viewing. This could be the individual types or all of the types.
+
+To get types of crime to only be `murder`:
 
 ```{r}
 combined_data_murder <- combined_data %>%
   filter(type == "murder")
 ```
 
+To get types of crime to only be `causing_injury`:
+
 ```{r}
 combined_data_injury <- combined_data %>%
   filter(type == "causing_injury")
 ```
+
+To get types of crime to be `all`:
 
 ```{r}
 combined_data_all <- combined_data %>%
   filter(type == "all")
 ```
 
+To get types of crime to be `causing_injury` and `murder`in `2022` only:
+
+```{r}
+combined_data_filtered <- combined_data %>%
+  filter(type %in% c("causing_injury", "murder") & year %in% c(2022))
+```
+
+While using `filter(type == "causing_injury")` is concise but `filter(type %in% c("causing_injury"))` allows the flexibility for one or more independent variables. This is beneficial for us when we want to allow users to have the freedom to select their own variable(s).
+
+### Correlation matrix
+
+We would also like for the user to be able to view the correlation matrix so that they can freely choose which independent variables to be used on GWR conducted in our application.
+
+For murder cases:
+
 ```{r}
 ggcorrmat(combined_data_murder[, 6:11])
 ```
+
+For causing injury cases:
 
 ```{r}
 ggcorrmat(combined_data_injury[, 6:11])
 ```
 
+An interesting parameter that can be included in `ggcorrmat()` is that we can choose the significance level of the matrix. This allows user to have more control over viewing the correlation.
+
 ```{r}
 ggcorrmat(combined_data_all[, 6:11], sig.level = 0.05)
 ```
 
-income median and mean are highly correlated since they are really similar and came from the same data set. Might be great for either of the variable to be removed for GWR.
+Note: Income median and mean are highly correlated since they are similar and came from the same data set. Either of the variable might be removed for GWR in the Shiny App.
 
-# function for generating regression model
+![](img/corr_anal.png)
 
-user is able to select which variables and data set.
+The correlation analysis will be under a tabset where user can toggle from the main GWR. On the side panel **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view and **`sliderInput()`** will be used for them to select the significance level of the correlation matrix.
+
+### Linear regression model
+
+To allow user is able to freely select which independent variables and type of crimes we need to create a function that dynamically accepts inputs.
 
 ```{r}
 run_regression <- function(data, response, predictors) {
@@ -379,11 +484,12 @@ run_regression <- function(data, response, predictors) {
   # Run the linear model
   model <- lm(formula = formula, data = data)
   
-  # Return the model
   return(model)
 }
 
 ```
+
+An example of using this function with all the variables as the independent variables and only using murder as the type of crime:
 
 ```{r}
 # Define predictors as a vector of variable names
@@ -399,9 +505,11 @@ murder_model <- run_regression(
 ols_regress(murder_model)
 ```
 
+An example of using this function with `poverty absolute, inequality and median income` as the independent variables and all type of crime:
+
 ```{r}
 # Define predictors as a vector of variable names
-predictors <- c("poverty_relative", "poverty_absolute", "inequality", "income_mean", "income_median")
+predictors <- c("poverty_absolute", "inequality", "income_median")
 
 # Run the function with the specified data and predictors
 all_model <- run_regression(
@@ -413,7 +521,11 @@ all_model <- run_regression(
 ols_regress(all_model)
 ```
 
-# Define the function
+### Stepwise regression model selection
+
+While allowing user the freedom of controlling the model used, we should provide information for them to choose model that suit their needs.
+
+Function for selecting the type of stepwise regression:
 
 ```{r}
 run_stepwise_selection <- function(model, direction = "forward", p_val = 0.05, details = FALSE) {
@@ -432,7 +544,7 @@ run_stepwise_selection <- function(model, direction = "forward", p_val = 0.05, d
 }
 ```
 
-###forward
+#### Forward selection
 
 ```{r}
 murder_fw_mlr <- run_stepwise_selection(
@@ -445,7 +557,7 @@ murder_fw_mlr <- run_stepwise_selection(
 print(murder_fw_mlr)
 ```
 
-### backward
+#### Backward Elimination
 
 ```{r}
 murder_bw_mlr <- run_stepwise_selection(
@@ -458,7 +570,7 @@ murder_bw_mlr <- run_stepwise_selection(
 print(murder_bw_mlr)
 ```
 
-### both
+#### Bidirectional Elimination
 
 ```{r}
 murder_sb_mlr <- run_stepwise_selection(
@@ -470,6 +582,8 @@ murder_sb_mlr <- run_stepwise_selection(
 
 print(murder_sb_mlr)
 ```
+
+### Visualising model metrics
 
 ```{r}
 metric <- compare_performance(murder_model, 
@@ -488,23 +602,15 @@ metric$Name <- gsub(".*\\\\([a-zA-Z0-9_]+)\\\\, \\\\model\\\\.*", "\\1", metric$
 plot(metric)
 ```
 
-# Function to create a coefficient plot
+While the plot looks fine, the naming of the models are confusing and special care should be taken to ensure that they are indicative to the reader what model this is.
 
-```{r}
-create_coef_plot <- function(model, conf.level = 0.95) {
-  ggcoefstats(model,
-              sort = "ascending",
-              title = "Estimated Coefficient",
-              conf.level = conf.level) +
-    theme(text = element_text(size = 16))
-}
-```
+![](img/model_sel.png)
 
-```{r}
-create_coef_plot(murder_sb_mlr$model, conf.level = 0.95)
-```
+The correlation analysis will be under a tabset where user can toggle from the main GWR. On the side panel, **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view, **`selectInput()`** will be used to select the type of crimes, another **`checkboxGroupInput()`** to select the year(s) and **`sliderInput()`** will be used for them to select the p value of the regression models.
 
-### Checksfor multicollinearity
+### Checks
+
+#### Linearity test
 
 ```{r}
 out <- plot(check_model(murder_sb_mlr$model, 
@@ -512,7 +618,7 @@ out <- plot(check_model(murder_sb_mlr$model,
 out[[2]]
 ```
 
-### normality test
+#### Normality test
 
 ```{r}
 plot(check_normality(murder_sb_mlr$model))
@@ -524,17 +630,32 @@ A histogram might be a better approach for user to tell the distribution at a gl
 ols_plot_resid_hist(murder_sb_mlr$model)
 ```
 
+#### Outliers
+
 ```{r}
 plot(check_outliers(murder_sb_mlr$model,
                            method = "cook"))
 ```
+
+#### Multicollinearity
+
+```{r}
+plot(check_collinearity(murder_sb_mlr$model)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](img/checks.png)
+
+The checks will be made up of the multicollinearity, normality, outliers, and collinearity graphs. It will be under a tabset where user can toggle from the main GWR. On the side panel, **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view, **`selectInput()`** will be used to select the type of crimes, another **`checkboxGroupInput()`** to select the year(s).
+
+#### Testing for Spatial Autocorrelation
 
 ```{r}
 mlr_output <- as.data.frame(murder_sb_mlr$model$residuals) %>%
   rename(`SB_MLR_RES` = `murder_sb_mlr$model$residuals`)
 ```
 
-because of empty rows we need to pad "NA"
+Due to empty rows we need to pad "NA"
 
 ```{r}
 murder_residual <- data.frame(MLR_RES = rep(NA, nrow(combined_data_murder)))
@@ -551,22 +672,7 @@ combined_data_murder <- cbind(combined_data_murder,
 combined_data_murder_st <- st_as_sf(combined_data_murder)
 ```
 
-```{r}
-tm_shape(msia)+
-  tmap_options(check.and.fix = TRUE) +
-  tm_polygons(alpha = 0.4) +
-tm_shape(combined_data_murder_st) +  
-  tm_dots(col = "MLR_RES",
-          alpha = 0.6,
-          style="quantile") 
-```
-
-```{r}
-plot(check_collinearity(murder_sb_mlr$model)) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-while its good to show the graph above is great to show the collinearity, showing it in a map might be better as shown below
+Visualising:
 
 ```{r}
 tmap_mode("view")
@@ -576,37 +682,13 @@ tm_shape(combined_data_murder_st) +
 tmap_mode("plot")
 ```
 
-```{r}
-run_regression <- function(data, response, predictors) {
-  # Create formula from response and predictors
-  formula <- as.formula(
-    paste(response, "~", paste(predictors, collapse = " + "))
-  )
-  
-  # Run the linear model
-  model <- lm(formula = formula, data = data)
-  
-  # Return the model
-  return(model)
-}
+Further tests for spatial autocorrelation will be done by my group mate.
 
-```
+### GWmodel
 
-```{r}
-# Define predictors as a vector of variable names
-predictors <- c("poverty_relative", "poverty_absolute", "inequality", "income_mean", "income_median")
+#### Compute bandwith
 
-# Run the function with the specified data and predictors
-murder_model <- run_regression(
-  data = combined_data_murder,
-  response = "crimes",
-  predictors = predictors
-)
-
-ols_regress(murder_model)
-```
-
-# Filter out rows with NA or Inf in the relevant columns
+Filter out rows with NA or Inf in the relevant columns:
 
 ```{r}
 combined_data_murder_st_clean <- combined_data_murder_st %>%
@@ -617,6 +699,14 @@ combined_data_murder_st_clean <- combined_data_murder_st %>%
     is.finite(inequality) & is.finite(income_mean) & is.finite(income_median)
   )
 ```
+
+Users will be able to choose for:
+
+-   `approach` - CV or AIC corrected
+
+-   `kernel`- gaussian, exponential, bisquare, tricube
+
+-   `adaptive` - true or false (adaptive or fixed bandwidth)
 
 ```{r}
 bw.fixed <- bw.gwr(formula = crimes ~ poverty_relative + poverty_absolute + inequality +
@@ -646,11 +736,9 @@ combined_data_murder_st_clean_adaptive <- st_as_sf(gwr.fixed$SDF) %>%
   st_transform(crs=3168)
 ```
 
-```{r}
-#| eval: false
-gwr.fixed.output <- as.data.frame(gwr.fixed$SDF)
-condo_resale.sf.adaptive <- cbind(combined_data_murder_st_clean, as.matrix(gwr.fixed.output))
-```
+#### Visualising
+
+This map shows the local R2
 
 ```{r}
 tmap_mode("view")
@@ -659,6 +747,8 @@ tm_shape(combined_data_murder_st_clean_adaptive) +
   tm_view(set.zoom.limits = c(5, 9))
 tmap_mode("plot")
 ```
+
+This would show the local R2 on the left and coefficent estimates on the right to allow comparison on how well the local regression model explains the coefficent estimates.
 
 ```{r}
 tmap_mode("view")
@@ -677,133 +767,11 @@ tmap_mode("plot")
 
 ```
 
-```{r}
+![](img/gwr.png)
 
-```
+This will be the main tabset. On the side panel, **`checkboxGroupInput()`** will be used to select the independent variables that the user wants to view, **`selectInput()`** will be used to select the type of crimes, another **`checkboxGroupInput()`** to select the year(s). The three **`selectInput()`** at the bottom of the side panel will be used to control the bandwidth computation parameters.
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
+## Conclusion
 
 ```{r}
 
